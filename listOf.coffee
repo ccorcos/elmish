@@ -28,7 +28,8 @@ remove = (model, id) ->
 
 wrapChild = (model, id, childAction, update) ->
   index = model.list.findIndex (item) -> item.id is id
-  if childModel = model.list[index]?.model
+  childModel = model.list[index]?.model
+  if childModel isnt undefined
     nextChild = update(childAction, childModel)
     nextList = model.list.slice(0)
     nextList[index] = {id, model:nextChild.model}

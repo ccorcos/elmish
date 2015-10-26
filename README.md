@@ -25,7 +25,6 @@ The Elm archirecture is a very power functional programming pattern for building
   - Implement `bind` which allows you to compare bound functions using `f.equals(g)` to optimize diffing.
 
 - Animation example
-- Implement undo/redo
 - Implement error reporting with initial model and action sequences
 - Time-travelling debugger - commit actions, undo actions, etc.
 - Giphy example with text input for the topic
