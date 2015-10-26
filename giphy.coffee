@@ -1,41 +1,46 @@
 {html} = require './elmish'
-request = require 'browser-request'
-R = require 'ramda'
 
 randomUrl = (topic) -> 
   "http://api.giphy.com/v1/gifs/random?api_key=dc6zaTOxFJmzC&tag=#{topic}"
 
+# side-effects return a promise of an action
 getRandomGif = (topic) ->
   fetch(randomUrl(topic))
     .then (response) ->
       response.json()
     .then ({data}) ->
-      console.log "DONE"
       type: 'newGif'
       url: data?.image_url
     .catch (error) ->
-      console.log "ERROR"
       type: 'errorGif'
       error: error
 
+assoc = (key, value, obj) ->
+  prop = {}
+  prop[key] = value
+  Object.assign({}, obj, prop)
+
+# init : () -> {model, effect}
 init = (topic="funny cats") -> 
-  model: {topic, url: 'v2/loading.gif'}
+  model: {topic, url: 'loading.gif'}
   effects: [getRandomGif(topic)]
 
+# update : (action, model) -> {model, effects}
 update = (action, model) ->
   switch action.type
-    when 'newGif' then return {model: R.assoc('url', action.url, model)}
-    when 'errorGif' then return {model: R.assoc('url', "v2/error.gif", model)}
-    when 'anotherGif' then return {model: R.assoc('url', 'v2/loading.gif', model), effects: [getRandomGif(model.topic)]}
+    when 'newGif' then return {model: assoc('url', action.url, model)}
+    when 'errorGif' then return {model: assoc('url', "error.gif", model)}
+    when 'anotherGif' then return {model: assoc('url', 'loading.gif', model), effects: [getRandomGif(model.topic)]}
     else return {model}
 
-view = (address, model) ->
+# view : (dispatch, model) -> html
+view = (dispatch, model) ->
   html.div {},
     html.h2 {}, model.topic
     html.img
       src: model.url
     html.button
-      onClick: -> address {type: 'anotherGif'}
+      onClick: -> dispatch {type: 'anotherGif'}
       'Gimme More!'
 
 module.exports = {init, update, view}
