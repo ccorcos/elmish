@@ -1,60 +1,37 @@
-rxjs? restart with model. re-run actions. time-travelling debugger
+# Elmish
 
-build gif example with text input
-build animation example
-build a form
-build a swipe menu
+This is a toy project implementing the [Elm architecture][arch] with React and Coffeescript.
 
-ramda for immutable.js? 
+To get it running:
+  
+    git clone https://github.com/ccorcos/elmish.git
+    cd elmish
+    npm install
+    webpack-dev-server
+    open http://localhost:8080/
 
-wrap into react?
-elmish front-end package
+Check out `entry.coffee` to select the example you want to run.
 
-record actions and models
-time-travelling debugger
+The Elm archirecture is a very power functional programming pattern for building user interfaces with all kinds of perks. Views are pure funtions of the state of the program. This means you can render any view in any state. So you could create an app of every view in every state making it trivial to re-style your app. You can also record the actions and the state making it easy to implement undo/redo, invalidate latency compensation action, and debug production errors.
 
-performance
-- re-computing views. memoize or react?
-- updating everything. immutable.js with cursors?! ramda?
+## To Do
 
+- [How to use RxJS?][rxjs-issue]
+  - RxJS would make a lot of sense. Elm has a really nice Signal library. I ran into all kinds of weird issues with Rx though. With RxJS, we can add a `signals` input to `start` like they do in Elm so the app can respond to external actions such as incoming data over websockets.
 
+- Virtual DOM Diffing
+  - Should I wrap all views in a React component? Or create a high-order function for diffing/memoizing the view functions?
+  - May need to wrap in a React component so I can set the key for the component when iterating through a list.
+  - Implement `bind` which allows you to compare bound functions using `f.equals(g)` to optimize diffing.
 
+- Animation example
+- Implement undo/redo
+- Implement error reporting with initial model and action sequences
+- Time-travelling debugger - commit actions, undo actions, etc.
+- Giphy example with text input for the topic
+- Investigate form abstraction
+- Build a swipe menu / swipeable views
+- Use Immutable.js
 
-how to do declarative neo4j graph query dependencies
-
-websockets and user auth / oauth
-
-https://github.com/dthree/vantage
-
-docker and kubernetes
-
-
-rename to elmish
-pipe through react for dom diffing and react dev tools
-use immutable.js and build ramda for immutable.js
-function binding, calling, equality helpers.
-
-git clone
-npm i
-./webpack-dev-server
-open http://localhost:8080/
-
-
-https://github.com/evancz/elm-architecture-tutorial/tree/master/examples/4
-
-
-
-# init : () -> state
-# update : (state) -> (action) -> state
-# view : (context, dispatch, state) -> html
-renderLoop = (state) ->
-  dispatch = pipe(update(state), renderLoop)
-  render view({}, dispatch, state)
-renderLoop(init())
-
-
-
-
-Immutable.js. Functional API to Immutable.js.
-React Keys and DOM diffing.
-
+[arch]: https://github.com/evancz/elm-architecture-tutorial
+[rxjs-issue]: https://github.com/Reactive-Extensions/RxJS/issues/992
