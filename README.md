@@ -16,6 +16,28 @@ The Elm archirecture is a very power functional programming pattern for building
 
 ## To Do
 
+we need some sort of cleanup with these streams. there needs to be something like a Task so we can say Task.none or just a single task and batch them together. 
+
+whats the difference between effects, task and port?
+
+seems like we should just create an effect$ at the top level and pipe it all the way down and pass it into every update... then you can throw the promise right in there.
+
+the question now is how to deal with accumulating resource requests like with relay?
+
+flyd.mergeAll
+
+# f -> g -> * -> f(g(*))
+wrap = R.curry (f, g) -> (args...) -> f(R.apply(g, args))
+
+- R.compose should curry at least 3 right
+
+coffee> a = -> 1
+[Function]
+coffee> f = R.compose(R.inc)
+[Function]
+coffee> f(a)
+'1function () {\n  return 1;\n}'
+
 - flyd effects stream and mapping
 - flyd.forwardTo (with .equals!)
 
