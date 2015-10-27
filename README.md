@@ -16,6 +16,11 @@ The Elm archirecture is a very power functional programming pattern for building
 
 ## To Do
 
+- flyd effects stream and mapping
+- flyd.forwardTo (with .equals!)
+
+
+
 - [How to use RxJS?][rxjs-issue]
   - RxJS would make a lot of sense. Elm has a really nice Signal library. I ran into all kinds of weird issues with Rx though. With RxJS, we can add a `signals` input to `start` like they do in Elm so the app can respond to external actions such as incoming data over websockets.
 

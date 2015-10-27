@@ -30,7 +30,7 @@ wrapChild = (model, id, childAction, update) ->
   index = model.list.findIndex (item) -> item.id is id
   childModel = model.list[index]?.model
   if childModel isnt undefined
-    nextChild = update(childAction, childModel)
+    nextChild = update(childModel, childAction)
     nextList = model.list.slice(0)
     nextList[index] = {id, model:nextChild.model}
     model:
@@ -46,8 +46,8 @@ listOf = (kind) ->
   # init : () -> {model, effects}
   init = -> {model: {list: [], nextId: 0}}
 
-  # update : (action, model) -> {model, effects}
-  update = (action, model) ->
+  # update : (model, action) -> {model, effects}
+  update = (model, action) ->
     switch action.type
       when 'insert' then return insert(model, kind.init())
       when 'remove' then return remove(model, action.id)

@@ -3,8 +3,8 @@
 # init : () -> {model, effects}
 init = (model=0) -> {model}
 
-# update : (action, model) -> {model, effects}
-update = (action, model) ->
+# update : (model, action) -> {model, effects}
+update = (model, action) ->
   switch action.type
     when 'increment' then return {model: model + 1}
     when 'decrement' then return {model: model - 1}

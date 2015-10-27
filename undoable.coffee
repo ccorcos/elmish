@@ -24,7 +24,7 @@ wrapEffects = (effects) ->
     p.then (action) -> {type: 'change', action}
 
 change = ({past, present, future}, childUpdate, childAction) ->
-  {model, effects} = childUpdate(childAction, present)
+  {model, effects} = childUpdate(present, childAction)
   model:
     past: past.concat(present)
     present: model
@@ -43,8 +43,8 @@ undoable = (kind) ->
       future: []
     effects: effects
 
-  # update : (action, model) -> {model, effects}
-  update = (action, model) ->
+  # update : (model, action) -> {model, effects}
+  update = (model, action) ->
     switch action.type
       when 'undo' then return undo(model)
       when 'redo' then return redo(model)

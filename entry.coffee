@@ -1,35 +1,47 @@
-{simple, start} = require './elmish'
+{simple, start, render} = require './elmish'
+flyd = require 'flyd'
 
-# ex1 - counter
+
+log = (label) -> (value) -> console.log(label+':', value)
+
+renderToRoot = (html) ->
+  render(html, document.getElementById('root'))
+
+mount = ({html$, model$, action$}) ->
+  flyd.map(renderToRoot, html$)
+  flyd.map(log('model'), model$)
+  flyd.map(log('action'), action$)
+
+# # ex1 - counter
 # Counter = require './simple/counter'
-# simple Counter
+# mount simple Counter
 
 # # ex2 - list of counters
 # Counter = require './simple/counter'
 # listOf = require './simple/listOf'
-# simple listOf(Counter)
+# mount simple listOf Counter
 
 # # ex3 - list of list of counters
 # Counter = require './simple/counter'
 # listOf = require './simple/listOf'
-# simple listOf(listOf(Counter))
+# mount simple listOf listOf Counter
 
 # # ex4 - giphy with side-effects
 # Giphy = require './giphy'
-# start Giphy
+# mount start Giphy
 
 # # ex5 - list of giphy with side-effects
 # Giphy = require './giphy'
 # listOf = require './listOf'
-# start listOf(Giphy)
+# mount start listOf Giphy
 
 # # ex6 - undoable counter
 # Counter = require './counter'
 # undoable = require './undoable'
-# start undoable(Counter)
+# mount start undoable Counter
 
-# # ex7 - undoable list of counters
-# Counter = require './counter'
-# listOf = require './listOf'
-# undoable = require './undoable'
-# start undoable(listOf(Counter))
+# ex7 - undoable list of counters
+Counter = require './counter'
+listOf = require './listOf'
+undoable = require './undoable'
+mount start undoable listOf Counter

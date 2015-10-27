@@ -25,8 +25,8 @@ init = (topic="funny cats") ->
   model: {topic, url: 'loading.gif'}
   effects: [getRandomGif(topic)]
 
-# update : (action, model) -> {model, effects}
-update = (action, model) ->
+# update : (model, action) -> {model, effects}
+update = (model, action) ->
   switch action.type
     when 'newGif' then return {model: assoc('url', action.url, model)}
     when 'errorGif' then return {model: assoc('url', "error.gif", model)}

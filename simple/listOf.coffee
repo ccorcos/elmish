@@ -10,7 +10,7 @@ remove = (model, id) ->
   nextId: model.nextId
 
 child = (model, id, childAction, update) ->
-  list: model.list.map (item) -> if item.id is id then {id, model: update(childAction, item.model)} else item
+  list: model.list.map (item) -> if item.id is id then {id, model: update(item.model, childAction)} else item
   nextId: model.nextId
 
 # add a remove button to each view
@@ -29,8 +29,8 @@ listOf = (kind) ->
   # init : () -> model
   init = -> {list: [], nextId: 0}
 
-  # update : (action, model) -> model
-  update = (action, model) ->
+  # update : (model, action) -> model
+  update = (model, action) ->
     switch action.type
       when 'insert' then return insert(model, kind.init())
       when 'remove' then return remove(model, action.id)
