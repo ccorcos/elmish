@@ -1,7 +1,6 @@
 {simple, start, render} = require './elmish'
 flyd = require 'flyd'
 
-
 log = (label) -> (value) -> console.log(label+':', value)
 
 renderToRoot = (html) ->
@@ -12,9 +11,9 @@ mount = ({html$, model$, action$}) ->
   flyd.map(log('model'), model$)
   flyd.map(log('action'), action$)
 
-# # ex1 - counter
-# Counter = require './simple/counter'
-# mount simple Counter
+# ex1 - counter
+Counter = require './simple/counter'
+mount simple Counter
 
 # # ex2 - list of counters
 # Counter = require './simple/counter'
@@ -40,8 +39,8 @@ mount = ({html$, model$, action$}) ->
 # undoable = require './undoable'
 # mount start undoable Counter
 
-# ex7 - undoable list of counters
-Counter = require './counter'
-listOf = require './listOf'
-undoable = require './undoable'
-mount start undoable listOf Counter
+# # ex7 - undoable list of counters
+# Counter = require './counter'
+# listOf = require './listOf'
+# undoable = require './undoable'
+# mount start undoable listOf Counter

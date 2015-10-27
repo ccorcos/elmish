@@ -14,37 +14,20 @@ Check out `entry.coffee` to select the example you want to run.
 
 The Elm archirecture is a very power functional programming pattern for building user interfaces with all kinds of perks. Views are pure funtions of the state of the program. This means you can render any view in any state. So you could create an app of every view in every state making it trivial to re-style your app. You can also record the actions and the state making it easy to implement undo/redo, invalidate latency compensation action, and debug production errors.
 
+## Implementation Notes
+
+To get concurrency to work, Elm uses Tasks, Effects, and ports. In JavaScript, promises accomplish this for us and they run immediatly without having to find their way to a port. Thus we simply pass the `effect$` stream to init and update so they can send promises along easily.
+
+Elm has a sweet Signals package, but lucky, we have [flyd](https://github.com/paldepind/flyd).
+
+[Ramda](http://ramdajs.com/) also keeps the code clean and functional.
+
 ## To Do
 
-we need some sort of cleanup with these streams. there needs to be something like a Task so we can say Task.none or just a single task and batch them together. 
-
-whats the difference between effects, task and port?
-
-seems like we should just create an effect$ at the top level and pipe it all the way down and pass it into every update... then you can throw the promise right in there.
-
-the question now is how to deal with accumulating resource requests like with relay?
-
-flyd.mergeAll
-
-# f -> g -> * -> f(g(*))
-wrap = R.curry (f, g) -> (args...) -> f(R.apply(g, args))
-
-- R.compose should curry at least 3 right
-
-coffee> a = -> 1
-[Function]
-coffee> f = R.compose(R.inc)
-[Function]
-coffee> f(a)
-'1function () {\n  return 1;\n}'
-
-- flyd effects stream and mapping
-- flyd.forwardTo (with .equals!)
-
-
-
-- [How to use RxJS?][rxjs-issue]
-  - RxJS would make a lot of sense. Elm has a really nice Signal library. I ran into all kinds of weird issues with Rx though. With RxJS, we can add a `signals` input to `start` like they do in Elm so the app can respond to external actions such as incoming data over websockets.
+- how would you subscribe and unsubscribe within the lifecyle of a view? perhaps we may as well use react components after all.
+- how would you cache subscriptions with flyd?
+- how would you accumulate resource requests like relay?
+- bound functions with .equals -- along with Ramda, and flyd.forwardTo
 
 - Virtual DOM Diffing
   - Should I wrap all views in a React component? Or create a high-order function for diffing/memoizing the view functions?

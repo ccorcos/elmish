@@ -1,4 +1,4 @@
-{html} = require './elmish'
+{html, R, flyd} = require './elmish'
 
 randomUrl = (topic) -> 
   "http://api.giphy.com/v1/gifs/random?api_key=dc6zaTOxFJmzC&tag=#{topic}"
@@ -15,32 +15,29 @@ getRandomGif = (topic) ->
       type: 'errorGif'
       error: error
 
-assoc = (key, value, obj) ->
-  prop = {}
-  prop[key] = value
-  Object.assign({}, obj, prop)
+# init : (effect$) -> model
+init = (effect$, topic="cats") -> 
+  effect$(getRandomGif(topic))
+  topic:topic, url: 'loading.gif'
 
-# init : () -> {model, effect}
-init = (topic="funny cats") -> 
-  model: {topic, url: 'loading.gif'}
-  effects: [getRandomGif(topic)]
-
-# update : (model, action) -> {model, effects}
-update = (model, action) ->
+# update : (effect$, model, action) -> model
+update = (effect$, model, action) ->
   switch action.type
-    when 'newGif' then return {model: assoc('url', action.url, model)}
-    when 'errorGif' then return {model: assoc('url', "error.gif", model)}
-    when 'anotherGif' then return {model: assoc('url', 'loading.gif', model), effects: [getRandomGif(model.topic)]}
-    else return {model}
+    when 'newGif' then return R.assoc('url', action.url, model)
+    when 'errorGif' then return R.assoc('url', "error.gif", model)
+    when 'anotherGif'
+      effect$(getRandomGif(model.topic))
+      return R.assoc('url', 'loading.gif', model)
+    else return model
 
-# view : (dispatch, model) -> html
-view = (dispatch, model) ->
+# view : (dispatch$, model) -> html
+view = (dispatch$, model) ->
   html.div {},
     html.h2 {}, model.topic
     html.img
       src: model.url
     html.button
-      onClick: -> dispatch {type: 'anotherGif'}
+      onClick: flyd.forwardTo(dispatch$, R.always({type: 'anotherGif'}))
       'Gimme More!'
 
 module.exports = {init, update, view}

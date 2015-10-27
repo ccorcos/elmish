@@ -1,69 +1,58 @@
-{html} = require './elmish'
+{html, flyd} = require './elmish'
 
 undo = ({past, present, future}) ->
   if past.length > 0
-    model:
-      past: past.slice(0, past.length - 1)
-      present: past[past.length - 1]
-      future: [present].concat(future)
+    past: past.slice(0, past.length - 1)
+    present: past[past.length - 1]
+    future: [present].concat(future)
   else
-    model: {past, present, future}
+    {past, present, future}
 
 redo = ({past, present, future}) ->
   if future.length > 0
-    model:
-      past: past.concat(present)
-      present: future[0],
-      future: future.slice(1)
-  else
-    model: {past, present, future}
-
-# make sure the promised action makes it back to the child
-wrapEffects = (effects) ->
-  effects?.map (p) ->
-    p.then (action) -> {type: 'change', action}
-
-change = ({past, present, future}, childUpdate, childAction) ->
-  {model, effects} = childUpdate(present, childAction)
-  model:
     past: past.concat(present)
-    present: model
-    future: []
-  effects: wrapEffects(effects)
+    present: future[0],
+    future: future.slice(1)
+  else
+    {past, present, future}
+
+toChangeAction = (action) -> {type: 'change', action}
+
+change = (effect$, {past, present, future}, update, action) ->
+  model = update(flyd.forwardTo(effect$, toChangeAction), present, action)
+  past: past.concat(present)
+  present: model
+  future: []
 
 # kind = {init, view, update}
 undoable = (kind) ->
 
-  # init : () -> {model, effects}
-  init = -> 
-    {model, effects} = kind.init()
-    model:
-      past: []
-      present: model
-      future: []
-    effects: effects
+  # init : (effect$) -> model
+  init = (effect$) -> 
+    past: []
+    present: kind.init(effect$)
+    future: []
 
-  # update : (model, action) -> {model, effects}
-  update = (model, action) ->
+  # update : (effect$, model, action) -> model
+  update = (effect$, model, action) ->
     switch action.type
       when 'undo' then return undo(model)
       when 'redo' then return redo(model)
-      when 'change' then return change(model, kind.update, action.action)
-      else return {model}
+      when 'change' then return change(effect$, model, kind.update, action.action)
+      else return model
 
-  # view : (dispatch, model) -> html
-  view = (dispatch, model) ->
-    onChange = (action) -> dispatch {type: 'change', action}
+  # view : (dispatch$, model) -> html
+  view = (dispatch$, model) ->
     html.div {},
       html.button
         disabled: model.past.length is 0
-        onClick: -> dispatch {type:'undo'}
+        onClick: -> dispatch$ {type:'undo'}
         'undo'
       html.button
         disabled: model.future.length is 0
-        onClick: -> dispatch {type:'redo'}
+        onClick: -> dispatch$ {type:'redo'}
         'redo'
-      kind.view(onChange, model.present)
+      kind.view(flyd.forwardTo(dispatch$, toChangeAction), model.present)
 
   return {init, update, view}
 
