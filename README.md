@@ -7,8 +7,8 @@ To get it running:
     git clone https://github.com/ccorcos/elmish.git
     cd elmish
     npm install
-    webpack-dev-server
-    open http://localhost:8080/
+    node server.js
+    open http://localhost:3000/
 
 Check out `entry.coffee` to select the example you want to run.
 
