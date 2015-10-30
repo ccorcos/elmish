@@ -13,16 +13,6 @@ child = (model, id, childAction, update) ->
   list: model.list.map (item) -> if item.id is id then {id, model: update(item.model, childAction)} else item
   nextId: model.nextId
 
-# add a remove button to each view
-removeable = (view, onRemove) -> (dispatch, model) ->
-  html.div
-    style: display: 'flex'
-    view(dispatch, model)
-    html.button
-      style: marginLeft: 5
-      onClick: onRemove
-      'X'
-
 # kind = {init, view, update}
 listOf = (kind) ->
 
@@ -46,7 +36,13 @@ listOf = (kind) ->
       model.list.map (item) ->
         forward = (action) -> dispatch {type: 'child', id: item.id, action}
         onRemove = () -> dispatch {type: 'remove', id: item.id}
-        removeable(kind.view, onRemove)(forward, item.model)
+        html.div
+          style: display: 'flex'
+          kind.view(forward, item.model)
+          html.button
+            style: marginLeft: 5
+            onClick: onRemove
+            'X'
 
   return {init, update, view}
 

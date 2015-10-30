@@ -37,6 +37,7 @@ view = (dispatch$, model) ->
     html.img
       src: model.url
     html.button
+      # Same as: onClick: (action) -> dispatch$ {type: 'anotherGif'}
       onClick: flyd.forwardTo(dispatch$, R.always({type: 'anotherGif'}))
       'Gimme More!'
 
