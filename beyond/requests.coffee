@@ -37,7 +37,9 @@ _flatten = (req) -> R.reduce(append, [], req)
 
 concat = R.curry (req1, req2) ->
   _flatten(R.concat(req1, req2)) 
-  
+
+none = -> []
+
 # Requests
 module.exports = {
   request

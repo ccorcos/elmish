@@ -24,6 +24,10 @@ Elm has a sweet Signals package, but lucky, we have [flyd](https://github.com/pa
 
 ## To Do
 
+- R.bind
+- giphy with requests
+- currently, you cant tell where a request came from. We need to do this so we can deep merge while the requests are outstanding. This makes sure we cants spam while we're waiting for the response.
+
 - how would you subscribe and unsubscribe within the lifecyle of a view? perhaps we may as well use react components after all.
 - how would you cache subscriptions with flyd?
 - how would you accumulate resource requests like relay?
