@@ -24,23 +24,21 @@ Elm has a sweet Signals package, but lucky, we have [flyd](https://github.com/pa
 
 ## To Do
 
-- R.bind
-- giphy with requests
-- currently, you cant tell where a request came from. We need to do this so we can deep merge while the requests are outstanding. This makes sure we cants spam while we're waiting for the response.
+- http service dedupe requests to the same component
+- better logs with conventions / devtool
+- websockets service
+- explain how requests work
 
-- how would you subscribe and unsubscribe within the lifecyle of a view? perhaps we may as well use react components after all.
-- how would you cache subscriptions with flyd?
-- how would you accumulate resource requests like relay?
-- bound functions with .equals -- along with Ramda, and flyd.forwardTo
+- consistent structure for actions, child actions, view names so we can print and track actions easily.
+- R.bind and lazy evaluation of views
 
-- Virtual DOM Diffing
-  - Should I wrap all views in a React component? Or create a high-order function for diffing/memoizing the view functions?
-  - May need to wrap in a React component so I can set the key for the component when iterating through a list.
-  - Implement `bind` which allows you to compare bound functions using `f.equals(g)` to optimize diffing.
+- graphql / relay
+- react vs snabbdom
 
-- Animation example
-- Implement error reporting with initial model and action sequences
-- Time-travelling debugger - commit actions, undo actions, etc.
+- elm animation example
+- error reporting with model + action sequences
+- time-travelling debugger - commit actions, undo actions, etc.
+- 
 - Giphy example with text input for the topic
 - Investigate form abstraction
 - Build a swipe menu / swipeable views

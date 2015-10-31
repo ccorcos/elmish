@@ -1,2 +1,2 @@
 # to run the tutorial
-require './tutorial/main'
+require './beyond/main'

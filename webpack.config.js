@@ -28,10 +28,9 @@ module.exports = {
   },
   module: {
     loaders: [
-      {
-        test: /\.coffee$/,
-        loader: 'coffee',
-      }
+      { test: /\.js$/, loader: "babel", exclude: /(node_modules|bower_components)/ },
+      { test: /\.coffee$/, loader: "babel!coffee" },
+      { test: /\.(svg|png|jpe?g|gif|ttf|woff2?|eot)$/, loader: 'url?limit=8182' }
     ]
   }
 }

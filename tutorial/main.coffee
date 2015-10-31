@@ -1,5 +1,4 @@
-{simple, start, render} = require './elmish'
-flyd = require 'flyd'
+{simple, start, render, flyd} = require './elmish'
 
 log = (label) -> (value) -> console.log(label+':', value)
 

@@ -18,16 +18,16 @@ getRandomGif = (topic) ->
 # init : (effect$) -> model
 init = (effect$, topic="cats") -> 
   effect$(getRandomGif(topic))
-  topic:topic, url: 'loading.gif'
+  topic:topic, url: require('tutorial/loading.gif')
 
 # update : (effect$, model, action) -> model
 update = (effect$, model, action) ->
   switch action.type
     when 'newGif' then return R.assoc('url', action.url, model)
-    when 'errorGif' then return R.assoc('url', "error.gif", model)
+    when 'errorGif' then return R.assoc('url', require("tutorial/error.gif"), model)
     when 'anotherGif'
       effect$(getRandomGif(model.topic))
-      return R.assoc('url', 'loading.gif', model)
+      return R.assoc('url', require('tutorial/loading.gif'), model)
     else return model
 
 # view : (dispatch$, model) -> html
