@@ -9,7 +9,7 @@ bind = (args=[], f) ->
   return bound
 
 # add = (a, b) -> a + b
-# _add = bind [], add 
+# _add = bind [], add
 
 # _add1 = bind [1], add
 # add1 = bind [1], add

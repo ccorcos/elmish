@@ -7,12 +7,15 @@ Req = require './request'
 # HTTP Service modeled after window.fetch and assumes json responses
 # https://github.com/github/fetch
 
+delay = (ms, f) -> setTimeout(f, ms)
+
 # send a request and recieve a payload wrapped in an http action
 send = (receive$) -> (request) ->
-  fetch(request.resource.url, request.resource.options)
-    .then (response) -> response.json()
-    .then (payload) -> receive$ {type: 'http-success', request, payload}
-    .catch (payload) -> receive$ {type: 'http-error', request, payload}
+  delay 1000*2, ->
+    fetch(request.resource.url, request.resource.options)
+      .then (response) -> response.json()
+      .then (payload) -> receive$ {type: 'http-success', request, payload}
+      .catch (payload) -> receive$ {type: 'http-error', request, payload}
 
 # outbox is a list of requests that need to be sent
 # pending is a list of requests that are in flight
@@ -66,7 +69,7 @@ module.exports = do ->
     R.curry(flyd.filter)(nonEmpty)
     R.curry(flyd.on)(R.map(send(receive$)))
   )(model$)
-    
+
   {
     request$
     receive$
@@ -74,6 +77,3 @@ module.exports = do ->
     response$
     pending$
   }
-
-  
-  

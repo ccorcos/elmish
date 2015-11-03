@@ -24,8 +24,7 @@ Elm has a sweet Signals package, but lucky, we have [flyd](https://github.com/pa
 
 ## To Do
 
-- how are tasks completed? doesnt that array just grow forever?
-- http requests vs websocket persistent requests
+- websocket service + chatroom
 - undo-redo, time-travelling, error reporting with animation
 
 - websockets

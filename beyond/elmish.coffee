@@ -6,7 +6,7 @@ Req = require './request'
 bind = require './bind'
 
 ###
-A service needs to have a request$ and a response$ which 
+A service needs to have a request$ and a response$ which
 take lists of requests and respond with lists of actions.
 ###
 
@@ -28,7 +28,7 @@ toSingleton = (x) -> [x]
 # route requests to the proper services
 routeToServices = (services) -> (reqs) ->
   reqsByService = R.groupBy(R.prop('service'), reqs)
-  toService = (name) -> 
+  toService = (name) ->
     services[name].request$(reqsByService[name])
   R.map(toService, R.keys(reqsByService))
 
@@ -37,7 +37,7 @@ routeToServices = (services) -> (reqs) ->
 updateStep = (update) -> ({state, requests}, action) ->
   next = update(state, action)
   state: next.state
-  requests: Req.concat(requests, next.requests)
+  requests: next.requests
 
 # update based on a list of actions starting with no requests.
 updateAll = (update) -> ({state}, actions) ->
@@ -63,6 +63,13 @@ start = ({init, view, update}, services={}) ->
   # return any interesting streams to inspect
   {action$, state$, html$, services}
 
+noReqs = R.map(R.pipe(R.assoc('state', R.__, {}), R.assoc('requests', [])))
+inspect = (fn) -> (args...) ->
+  console.log.apply(console, R.concat(["in:"], args))
+  result = R.apply(fn, args)
+  console.log "out:", result
+  return result
+
 module.exports = {
   html: React.DOM
   render: ReactDOM.render
@@ -71,5 +78,6 @@ module.exports = {
   flyd
   Req
   bind
+  noReqs
+  inspect
 }
-

@@ -22,6 +22,16 @@ mount = ({html$, state$, action$, services:{http}}) ->
 # Giphy = require './giphy'
 # mount start(Giphy, {http})
 
-# ex2 - counter again...
-Counter = require './counter'
-mount start Counter
+# # ex2 - counter again...
+# Counter = require './counter'
+# mount start Counter
+
+# # ex3 - list of counters again...
+# listOf = require './listOf'
+# Counter = require './counter'
+# mount start listOf Counter
+
+# ex4 - list of giphy's
+listOf = require './listOf'
+Giphy = require './giphy'
+mount start(listOf(Giphy), {http})

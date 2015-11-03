@@ -1,22 +1,14 @@
-{html, bind} = require './elmish'
+{html, bind, noReqs} = require './elmish'
 
 # init : () -> {state, requests}
-init = () ->
-  state: 0
-  requests: []
+init = noReqs () -> 0
 
 # update : (state, action) -> {state, requests}
-update = (state, action) ->
+update = noReqs (state, action) ->
   switch action.type
-    when 'increment'
-      state: state + 1
-      requests: []
-    when 'decrement'
-      state: state - 1
-      requests: []
-    else
-      state: state
-      requests: []
+    when 'increment' then return state + 1
+    when 'decrement' then return state - 1
+    else return state
 
 # view : (dispatch, state) -> html
 view = (dispatch, state) ->
