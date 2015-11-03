@@ -27,7 +27,7 @@ equals = R.curry (x, y) ->
 merge = R.curry (x, y) -> 
   service: x.service
   resource: x.resource
-  onSucess: R.dropRepeats(R.concat(x.onSuccess, y.onSuccess))
+  onSuccess: R.dropRepeats(R.concat(x.onSuccess, y.onSuccess))
   onError: R.dropRepeats(R.concat(x.onError, y.onError))
 
 append = R.curry (item, list) ->

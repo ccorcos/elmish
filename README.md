@@ -24,11 +24,18 @@ Elm has a sweet Signals package, but lucky, we have [flyd](https://github.com/pa
 
 ## To Do
 
+- tests
+  - requests
+  - http
+
+- websockets
+- datomic
+- react component wrapper?
+
 - http service dedupe requests to the same component
 - better logs with conventions / devtool
 - websockets service
 - explain how requests work
-
 - consistent structure for actions, child actions, view names so we can print and track actions easily.
 - R.bind and lazy evaluation of views
 

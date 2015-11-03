@@ -7,20 +7,19 @@ Req = require './request'
 # HTTP Service modeled after window.fetch and assumes json responses
 # https://github.com/github/fetch
 
-callWith = R.flip(R.call)
-
+# send a request and recieve a payload wrapped in an http action
 send = (receive$) -> (request) ->
   fetch(request.resource.url, request.resource.options)
     .then (response) -> response.json()
     .then (payload) -> receive$ {type: 'http-success', request, payload}
     .catch (payload) -> receive$ {type: 'http-error', request, payload}
 
-# inbox are incoming http responses transformed into actions
-# outbox are outgoing http requests that need to be sent
-# pending are http requests that are in flight
+# outbox is a list of requests that need to be sent
+# pending is a list of requests that are in flight
+# inbox are responses to requests.
 update = ({pending}, action) ->
   switch action.type
-    when 'http-send'
+    when 'http-request'
       pending: Req.concat(action.requests, pending)
       inbox: []
       outbox: Req.diff(action.requests, pending)
@@ -44,7 +43,7 @@ update = ({pending}, action) ->
       outbox: []
 
 nonEmpty = (x) -> x.length > 0
-toHttpSend = (requests) -> {type: 'http-send', requests}
+toHttpRequest = (requests) -> {type: 'http-request', requests}
 
 module.exports = do ->
   # a stream of requests
@@ -52,7 +51,7 @@ module.exports = do ->
   # a stream of responses
   receive$ = flyd.stream()
   # actions for the http service to respond to
-  action$ = flyd.merge(flyd.map(toHttpSend, request$), receive$)
+  action$ = flyd.merge(flyd.map(toHttpRequest, request$), receive$)
   # initial model
   init = {pending:[], inbox:[], outbox: []}
   # handle the actions
