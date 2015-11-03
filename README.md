@@ -3,7 +3,7 @@
 This is a toy project implementing the [Elm architecture][arch] with React and Coffeescript.
 
 To get it running:
-  
+
     git clone https://github.com/ccorcos/elmish.git
     cd elmish
     npm install
@@ -24,15 +24,14 @@ Elm has a sweet Signals package, but lucky, we have [flyd](https://github.com/pa
 
 ## To Do
 
-- tests
-  - requests
-  - http
+- how are tasks completed? doesnt that array just grow forever?
+- http requests vs websocket persistent requests
+- undo-redo, time-travelling, error reporting with animation
 
 - websockets
 - datomic
 - react component wrapper?
 
-- http service dedupe requests to the same component
 - better logs with conventions / devtool
 - websockets service
 - explain how requests work
@@ -45,7 +44,6 @@ Elm has a sweet Signals package, but lucky, we have [flyd](https://github.com/pa
 - elm animation example
 - error reporting with model + action sequences
 - time-travelling debugger - commit actions, undo actions, etc.
-- 
 - Giphy example with text input for the topic
 - Investigate form abstraction
 - Build a swipe menu / swipeable views
