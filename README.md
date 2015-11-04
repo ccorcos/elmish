@@ -24,29 +24,42 @@ Elm has a sweet Signals package, but lucky, we have [flyd](https://github.com/pa
 
 ## To Do
 
-- websocket service + chatroom
-- undo-redo, time-travelling, error reporting with animation
+- convert to js es6
+- convert to using immutable.js
+- add hot module replacement with webpack
+- spin up a node/express server
+- jsondiffpatch to sync flyd stream to server
+- spin up rethinkdb
+- query chatrooms against rethinkdb and sync up
+- graph query diff refresh
 
-- websockets
-- datomic
-- react component wrapper?
+* authentication, auth0? aws?
+* crypto chat
+* shindig queries
 
-- better logs with conventions / devtool
-- websockets service
-- explain how requests work
+- time-travelling debugger / dev tool
+- styleguide
+- error reporting
+- animation
+- undo-redo
+
+- production shell repl
+- production deploy
+
+- react native
+- hot code-push
+- aws services and scaling
+
 - consistent structure for actions, child actions, view names so we can print and track actions easily.
 - R.bind and lazy evaluation of views
 
-- graphql / relay
-- react vs snabbdom
-
 - elm animation example
-- error reporting with model + action sequences
-- time-travelling debugger - commit actions, undo actions, etc.
-- Giphy example with text input for the topic
-- Investigate form abstraction
 - Build a swipe menu / swipeable views
-- Use Immutable.js
 
 [arch]: https://github.com/evancz/elm-architecture-tutorial
 [rxjs-issue]: https://github.com/Reactive-Extensions/RxJS/issues/992
+
+why js?
+- use other peoples code, infinite scrolling, inline svg loader, webpack, etc.
+- react native
+- isomorphic js
