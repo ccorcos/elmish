@@ -24,6 +24,13 @@ Elm has a sweet Signals package, but lucky, we have [flyd](https://github.com/pa
 
 ## To Do
 
+- rather than return an action with the whole payload, return an action with just the key which can be used as a key to the http cache. this key is effectively the request query. maintain the requests as well so the cache knows then it can be cleared! there we go! stateless! 
+
+- need to think about how requests join together and how fragment requests will join together eventually as well when doing something similar to graphql.
+
+- build a very basic chatroom app and ask mehendra how to scale it
+
+- elmish should be agnostic of React
 - convert to js es6
 - convert to using immutable.js
 - add hot module replacement with webpack
