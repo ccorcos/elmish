@@ -1,3 +1,169 @@
+Requests and GraphQl are the same if the queries are simply deep-merged. But we need to think about what queries ought to look like.
+
+- what are the queries involved with some typical apps
+- what kind of reactivity might we expect?
+
+chatroom example
+
+getChatrooms({limit, offset, name})
+getMessages({roomId, userId, text, limit, offset})
+
+setNewChatroom({name})
+  - refesh.getChatrooms({name: matches(name)})
+setNewMessage(roomId, text)
+  - refresh.getMessages({roomId: eq(roomId), text: matches(text)})
+
+shindig example
+
+getEvents({feed, popular, time, place, title, limit, offset})
+getUsers({followers, following, stagazers, commonStargazers, name})
+
+setNewEvent(title, time, place, userId)
+  - refresh.getEvents({
+      feed: eqOneOf(getUsers({followers: userId}).concat(userId)),
+      time: soonAfter(time),
+      place: near(place),
+      title: matches(title)
+    })
+setNewStar(eventId, userId)
+  - refresh.getEvents({id: eventId})
+  - refresh.getEvents({feed: )
+setNewFollow(userId, followId)
+
+
+- what about edge counts?
+- how can we organize the query and results information
+
+getEvents({feed, popular, time, place, title, limit, offset})
+
+events(feed:userId, time:12/28/15) {
+  id,
+  stargazerCount,
+  stargazers {
+    id
+  },
+  commonStargazerCount,
+  admins(limit: 10, offset: 0){
+    id,
+    followers(userId: userId) {
+      id
+    }
+  }
+}
+
+graph computations can be quite complex
+- how do you deal with paging, edge counts
+
+graphql is tricky as you start to have fields that want to take arguments
+
+this is all going to come down to building query reducers so we can appropriately merge resource requests.
+
+services define some kind of type along with a reducer which is basically just the concat method. Do queries merge and how? we need to think hard about how queries are constructed.
+
+Req.request
+  service: 'subscribe'
+  resource: {
+    node: 'chatrooms'
+    query: {limit: 10, offset: 0, name: ''}
+    edges: [
+      'id'
+      'name'
+      'createdAt'
+      {owner: {}}
+    ]
+  }
+
+getChatrooms({limit, offset, name})
+getMessages({roomId, userId, text, limit, offset})
+
+setNewChatroom({name})
+  - refesh.getChatrooms({name: matches(name)})
+setNewMessage(roomId, text)
+  - refresh.getMessages({roomId: eq(roomId), text: matches(text)})
+
+The problem here is coming up with THE BEST query language / query formatting ever. And it must cover all edge cases. Huge pain in the ass.
+
+The crucial things:
+- domain/query and query reducers
+- type/node
+- fields, fields that take args (singular edge), and edges
+
+['chatrooms', {limit, offset, name}, fields: ['id', 'name', 'createdAt', ['owner', ['id', 'name', 'messageCount']]]]
+
+
+
+- So we're using grapql. How do we specify fragments and how they merge? How do we run these giant queries as efficiently as possible? How do the reactive queries work?
+
+chatrooms({limit, offset, name}) {
+  id,
+  name,
+  createdAt,
+  owner {
+    id,
+    name,
+    messageCount
+  },
+  messages {
+    id,
+    text,
+    createdAt,
+    owner {
+      id,
+      name,
+      messageCount,  
+      // potentially nest even further    
+    }
+  }
+}
+
+we need a set of rules for reducing different kinds of fields.
+we need a set of methods for composing Neo4j queries.
+
+getChatrooms = ({limit, offset, name}) ->
+  MATCH (c:CHATROOM {name: regex(name)})
+
+  MATCH (c)-[:OWNED_BY]->(u)
+
+
+  RETURN c.id, c.name, c.createdAt,
+  LIMIT limit
+  OFFSET offset
+
+
+Can I get a graphql response from neo4j? can I put that edge inline to get a list of chatrooms with a list of their messages along with their owners?
+
+How would you implement caching and reactivity?
+Would reactive queries just be fragments or what?
+
+How do you compose all of these things nicely?
+
+
+functional programming and immutablility to the rescue...?
+
+caching and id lookup happens at the protocol interface level. out of the streams comes exactly what we put in. using immutable.js we can have shared data-structures and everything is good.
+
+the big benefit of this over the existing any-db any-store architecture is we can consolidate all out queries and merge them together. this means we far fewer requests. And rather than have tons of watchers, we can simply filter through the query space to refresh whatever needs to.
+
+
+things to think about for next time
+- query structure
+- resulting data structure
+- reactive query structure
+- caching / efficient filtering structures
+- consistency between owner and user, etc.
+
+if we describe all of this via algebraic structure, then we win. everything will be amazing.
+
+
+
+
+
+
+
+
+
+
+
 Req.request
   service: 'subscribe'
   resource: {roomId: 'elm'}
@@ -12,7 +178,7 @@ Req.consume needs to consume the child request within the parent request if poss
 
 domain:
   query: {}
-  fields: 
+  fields:
     name: true
     name: true
     domain:
