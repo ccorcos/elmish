@@ -1,7 +1,9 @@
 var path = require("path")
 var root = __dirname
+var nib = require("nib")
 
 module.exports = {
+  devtool: 'source-map',
   entry: {
     app: 'entry.coffee',
   },
@@ -20,7 +22,8 @@ module.exports = {
       '.scss',
       '.png',
       '.jpg',
-      '.svg'
+      '.svg',
+      '.styl'
     ],
     modulesDirectories: [
       'node_modules'
@@ -29,8 +32,12 @@ module.exports = {
   module: {
     loaders: [
       { test: /\.js$/, loader: "babel", exclude: /(node_modules|bower_components)/ },
-      { test: /\.coffee$/, loader: "babel!coffee" },
+      { test: /\.coffee$/, loader: "coffee" },
+      { test: /\.styl$/, loader: 'style-loader!css-loader!stylus-loader' },
       { test: /\.(svg|png|jpe?g|gif|ttf|woff2?|eot)$/, loader: 'url?limit=8182' }
     ]
+  },
+  stylus: {
+    use: [nib()]
   }
 }
