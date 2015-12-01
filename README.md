@@ -24,49 +24,19 @@ Elm has a sweet Signals package, but lucky, we have [flyd](https://github.com/pa
 
 ## To Do
 
-- rather than return an action with the whole payload, return an action with just the key which can be used as a key to the http cache. this key is effectively the request query. maintain the requests as well so the cache knows then it can be cleared! there we go! stateless! 
+- declarative data requests
+  - http
+    - twitter (list followers and list tweets by user)
+  - websockets
+    - chatroom
+- animation with requestAnimationFrame
+- hot module replacement
+- time travelling debugger
+- datomic and datascript
 
-- need to think about how requests join together and how fragment requests will join together eventually as well when doing something similar to graphql.
-
-- build a very basic chatroom app and ask mehendra how to scale it
-
-- elmish should be agnostic of React
-- convert to js es6
-- convert to using immutable.js
-- add hot module replacement with webpack
-- spin up a node/express server
-- jsondiffpatch to sync flyd stream to server
-- spin up rethinkdb
-- query chatrooms against rethinkdb and sync up
-- graph query diff refresh
-
-* authentication, auth0? aws?
-* crypto chat
-* shindig queries
-
-- time-travelling debugger / dev tool
-- styleguide
-- error reporting
-- animation
-- undo-redo
-
-- production shell repl
-- production deploy
-
-- react native
-- hot code-push
-- aws services and scaling
-
-- consistent structure for actions, child actions, view names so we can print and track actions easily.
-- R.bind and lazy evaluation of views
-
-- elm animation example
-- Build a swipe menu / swipeable views
+- user auth
+- routing
+- view controllers
 
 [arch]: https://github.com/evancz/elm-architecture-tutorial
 [rxjs-issue]: https://github.com/Reactive-Extensions/RxJS/issues/992
-
-why js?
-- use other peoples code, infinite scrolling, inline svg loader, webpack, etc.
-- react native
-- isomorphic js
