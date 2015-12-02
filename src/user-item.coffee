@@ -1,16 +1,16 @@
 html = require('react').DOM
 
 fields = () ->
-  ['name', 'image_url']
+  ['login', 'avatar_url']
 
 view = (user) ->
   html.div
     className: 'user-item'
     html.img
       className: 'image'
-      src: user.image_url
+      src: user.avatar_url
     html.span
       className: 'name'
-      user.name
+      user.login
 
 module.exports = {view, fields}

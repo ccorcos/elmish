@@ -5,7 +5,7 @@ require 'src/main.styl'
 
 splitView = require 'src/split-view.coffee'
 followingList = require 'src/following-list.coffee'
-tweetList = require 'src/tweet-list.coffee'
+starList = require 'src/star-list.coffee'
 
 cond = (a,b,c) -> if a then b() else c?()
 
@@ -16,7 +16,7 @@ fetch = (state) ->
   cond state.selected, 
     ->
       users: followingList.fetch()
-      tweets: tweetList.fetch(state.selected)
+      stars: starList.fetch(state.selected)
     ->
       users: followingList.fetch()
 
@@ -32,10 +32,10 @@ view = (dispatch, state, data) ->
     sidebar: followingList.view
       selected: state.selected
       select: (id) -> dispatch({type: 'select_user', id})
-      users: data.users
+      data: data.users
     content: cond state.selected,
       ->
-        tweetList(data.tweets)
+        starList(data.stars)
       ->
         html.div
           className: 'nothing'

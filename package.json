@@ -5,6 +5,7 @@
   "dependencies": {
     "browser-request": "^0.3.3",
     "coffee-script": "^1.10.0",
+    "es6-promise": "^3.0.2",
     "fantasy-promises": "^0.1.0",
     "flyd": "^0.1.15",
     "immutable": "^3.7.5",

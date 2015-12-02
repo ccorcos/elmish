@@ -21,17 +21,25 @@ view    : (dispatch, state, data) -> html
 fetch   : (state) -> fragment
 ###
 
-start = ({init, view, update, fetch}) ->
+start = ({init, view, update, request}) ->
   action$ = flyd.stream()
   state$ = flyd.scan(update, init(), action$)
-  request$ = flyd.map(fetch, state$)
+  fetch$ = flyd.map(fetch, state$)
+
+  # leavesEvolve(R.has('$fetch'), translate)
 
   # fetch data!
 
-  html$ = flyd.map(R.curry(view)(action$), state$)
+  data$ = flyd.map()
+  # I with plumbing like this was easier
+  stateAndData$ = flyd.lift(((a,b) -> [a,b]), state$, data$)
+  html$ =        flyd.map((([a,b]) -> view(action$, a, b)))
   {action$, state$, html$}
 
 # elmish
+
+# more nested / recursive http parsing
+# less naive http caching
 
 # TODO
 # app.coffee and elmish.coffee and http.coffee and twitter.coffee
