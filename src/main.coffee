@@ -2,41 +2,34 @@
 A view consists of the following methods
 init    : () -> state
 update  : (state, action) -> state
-view    : (state, tick, data, callback) -> html
+view    : (dispatch, state, data) -> html
 fetch   : (state) -> fragment
-animate : (state, tick) -> tick
 ###
 
-R = require 'ramda'
-ReactDOM = require('react-dom')
-render = (x) -> ReactDOM.render(x, document.getElementById('root'))
-html = require('react').DOM
+# R = require 'ramda'
+# ReactDOM = require('react-dom')
+# render = (x) -> ReactDOM.render(x, document.getElementById('root'))
+# html = require('react').DOM
 
-require 'src/main.styl'
 
-splitView = require 'src/split-view.coffee'
-followingList = require 'src/following-list.coffee'
 
-init = () ->
-  selected: null
 
-fetch = (state) ->
-  followingList.fetch()
+###
+init    : () -> state
+update  : (state, action) -> state
+view    : (dispatch, state, data) -> html
+fetch   : (state) -> fragment
+###
 
-update = (state, action) ->
-  switch action.type
-    when "select_user"
-      return R.assoc('selected', action.id, state)
-    else
-      return state
+start = ({init, view, update, fetch}) ->
+  action$ = flyd.stream()
+  state$ = flyd.scan(update, init(), action$)
+  request$ = flyd.map(fetch, state$)
 
-view = (dispatch, state, data) ->
-  splitView
-    sidebar: followingList.view
-      selected: state.selected
-      select: (id) -> dispatch({type: 'select_user', id})
-      users: data
-    content: html.div({}, "content")
+  # fetch data!
+
+  html$ = flyd.map(R.curry(view)(action$), state$)
+  {action$, state$, html$}
 
 # elmish
 
