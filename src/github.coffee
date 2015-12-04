@@ -11,18 +11,12 @@ translateGithubApi = ({$github: [name, args, fields]}) ->
   switch name
     when 'following'
       $fetch:
-        request: [base + 'following', {method: 'get'}]
-        transform: (response) ->
-          response.json()
-            .then (result) -> {[name]: result}
-            .catch (error) -> {error}
+        name: name
+        args: [base + 'following', {method: 'get'}]
     when 'stars'
       $fetch:
-        request: [base + 'starred', {method: 'get'}]
-        transform: (response) ->
-          response.json()
-            .then (result) -> {[name]: result}
-            .catch (error) -> {error}
+        name: name
+        args: [base + 'starred', {method: 'get'}]
     else
       console.warn "unknown github request", [name, args, fragments]
 

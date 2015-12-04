@@ -1,5 +1,7 @@
 html = require('react').DOM
 
+require 'src/user-item.styl'
+
 fields = () ->
   ['login', 'avatar_url']
 

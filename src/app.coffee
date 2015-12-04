@@ -12,13 +12,13 @@ cond = (a,b,c) -> if a then b() else c?()
 init = () ->
   selected: null
 
-fetch = (state) ->
+effect = (state) ->
   cond state.selected, 
     ->
-      users: followingList.fetch()
-      stars: starList.fetch(state.selected)
+      users: followingList.effect()
+      stars: starList.effect(state.selected)
     ->
-      users: followingList.fetch()
+      users: followingList.effect()
 
 update = (state, action) ->
   switch action.type
@@ -42,4 +42,4 @@ view = (dispatch, state, data) ->
           'Please select a user from the list on the left.'
 
 
-module.exports = {init, fetch, update, view}
+module.exports = {init, effect, update, view}

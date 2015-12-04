@@ -1,6 +1,6 @@
 html = require('react').DOM
 
-fetch = (id) ->
+effect = (id) ->
   {$github: ['stars', {id}, ['full_name', 'html_url', 'stargazers_count']]}
 
 view = (data) ->
@@ -22,3 +22,5 @@ view = (data) ->
   else
     html.div
       className: 'loading'
+
+module.exports = {effect, view}
