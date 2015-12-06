@@ -26,7 +26,7 @@ Elm has a sweet Signals package, but lucky, we have [flyd](https://github.com/pa
 
 - declarative data requests
   - http
-    - twitter (list followers and list tweets by user)
+    - github
   - websockets
     - chatroom
 - animation with requestAnimationFrame

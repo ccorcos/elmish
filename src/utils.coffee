@@ -1,4 +1,6 @@
 R = require 'ramda'
+flyd = require 'flyd'
+flyd.lift = require 'flyd/module/lift'
 
 isObject = (x) -> Object.prototype.toString.apply(x) is '[object Object]'
 isArray = (x) -> Object.prototype.toString.apply(x) is '[object Array]'
@@ -35,10 +37,28 @@ leavesWhere = R.curry (fn, obj) ->
 vennDiagram = R.curry (a, b) ->
   [R.difference(a, b), R.intersection(a,b), R.difference(b, a)]
 
+liftAllObj = (signals) ->
+  labeled = ([name, stream]) ->
+    flyd.map(
+      (value) -> {"#{name}": value}
+      stream
+    )
+
+  streams = R.pipe(
+    R.toPairs
+    R.map(labeled)
+  )(signals)
+
+  reducer = (acc, next) ->
+    flyd.lift(R.merge, acc, next)
+
+  R.reduce(reducer, R.head(streams), R.tail(streams))
+
 module.exports = {
   isObject
   isArray
   evolveLeavesWhere
   leavesWhere
   vennDiagram
+  liftAllObj
 }

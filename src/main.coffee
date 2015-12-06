@@ -1,27 +1,30 @@
+R = require 'ramda'
 start = require 'src/elmish.coffee'
 app = require 'src/app.coffee'
 http = require 'src/http.coffee'
 middleware = 
   $github: require 'src/github.coffee'
 
-start(app, http(middleware, monitor))
+watch = require 'src/watch.coffee'
 
-flyd = require 'flyd'
+port = http(middleware, watch)
+start(app, port, watch)
 
-monitor = ({effect$, response$, http$, action$, data$}) ->
-  log = console.log.bind(console, 'effect$')
-  flyd.on(log, effect$)
-  log = console.log.bind(console, 'data$')
-  flyd.on(log, data$)
 
 ###
 ELMISH TODO:
 
 - high-order stream for extended caching
 - meteor subscribe and unsubscribe
+
+- time travel high order component
+- monitor for watching values
+
 - ui monitor
   - time travel!
 - multiple window panes
+
+- compile to js!
 
 UI TODO
 - responsive split-view

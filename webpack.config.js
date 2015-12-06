@@ -1,3 +1,4 @@
+var webpack = require("webpack")
 var path = require("path")
 var root = __dirname
 var nib = require("nib")
@@ -5,7 +6,10 @@ var nib = require("nib")
 module.exports = {
   devtool: 'source-map',
   entry: {
-    app: 'entry.coffee',
+    app: [
+    'webpack-hot-middleware/client',
+    'entry.coffee'
+    ],
   },
   output: {
     path: root,
@@ -39,5 +43,9 @@ module.exports = {
   },
   stylus: {
     use: [nib()]
-  }
+  },
+  plugins: [
+    new webpack.HotModuleReplacementPlugin(),
+    new webpack.NoErrorsPlugin()
+  ]
 }

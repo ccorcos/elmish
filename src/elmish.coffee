@@ -8,6 +8,7 @@ effect : (state) -> tree
 
 R = require 'ramda'
 flyd = require 'flyd'
+flyd.lift = require 'flyd/module/lift'
 
 ReactDOM = require('react-dom')
 render = (x) -> ReactDOM.render(x, document.getElementById('root'))

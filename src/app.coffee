@@ -35,7 +35,7 @@ view = (dispatch, state, data) ->
       data: data.users
     content: cond state.selected,
       ->
-        starList(data.stars)
+        starList.view(data.stars)
       ->
         html.div
           className: 'nothing'

@@ -5,18 +5,18 @@
 R = require 'ramda'
 
 username = 'ccorcos'
-base = "https://api.github.com/users/#{username}/"
+base = "https://api.github.com/users/"
 
 translateGithubApi = ({$github: [name, args, fields]}) ->
   switch name
     when 'following'
       $fetch:
         name: name
-        args: [base + 'following', {method: 'get'}]
+        args: ["https://api.github.com/users/ccorcos/following", {method: 'get'}]
     when 'stars'
       $fetch:
         name: name
-        args: [base + 'starred', {method: 'get'}]
+        args: ["https://api.github.com/users/#{args.login}/starred", {method: 'get'}]
     else
       console.warn "unknown github request", [name, args, fragments]
 

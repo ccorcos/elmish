@@ -1,26 +1,38 @@
 html = require('react').DOM
+R = require('ramda')
 
-effect = (id) ->
-  {$github: ['stars', {id}, ['full_name', 'html_url', 'stargazers_count']]}
+require 'src/star-list.styl'
+
+spinner = require 'src/spinner.coffee'
+
+effect = (login) ->
+  {$github: ['stars', {login}, ['full_name', 'html_url', 'stargazers_count']]}
 
 view = (data) ->
-  if data.result
-    data.result.map (repo) ->
+  if data.stars.$pending
+    spinner()
+  else if data.stars
+    item = (repo) ->
       html.div
         className: 'repo-item'
+        html.div
+          className: 'stars'
+          repo.stargazers_count
         html.a
           className: 'name'
           href: repo.html_url
           repo.full_name
-        html.div
-          className: 'stars'
-          repo.stargazers_count
+    R.pipe(
+      R.sortBy(R.prop('stargazers_count'))
+      R.reverse
+      R.map(item)
+    )(data.stars)
   else if data.error
     html.div
       className: 'error'
       error.message
   else
-    html.div
-      className: 'loading'
+    console.warn("this shouldn't happen")
+    
 
 module.exports = {effect, view}

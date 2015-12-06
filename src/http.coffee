@@ -4,7 +4,6 @@ require('es6-promise').polyfill()
 
 R = require 'ramda'
 flyd = require 'flyd'
-flyd.lift = require 'flyd/module/lift'
 
 {
   evolveLeavesWhere
@@ -112,7 +111,6 @@ http = (middleware, monitor) -> (effect$) ->
         # send off any new requests responding with the
         # {name: result} or {error}
         newRequests.map ({args, name}) ->
-          console.log("fetch", name, args)
           window.fetch.apply(window, args)
             .then (response) -> response.json()
             .then (result) -> {"#{name}": result}
@@ -139,7 +137,6 @@ http = (middleware, monitor) -> (effect$) ->
         nextCache = R.assoc(action.key, action.value, state.cache)
         # populate data from the new cache
         nextData = makeData(nextCache, state.tree)
-        console.log(nextData)
         return {
           requests: state.requests
           data: nextData
