@@ -1,0 +1,1 @@
+global.R = require('ramda');
