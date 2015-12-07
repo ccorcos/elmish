@@ -2,11 +2,15 @@ R = require 'ramda'
 start = require 'src/elmish.coffee'
 app = require 'src/app.coffee'
 http = require 'src/http.coffee'
+translate = require 'src/translate.coffee'
+
 middleware = 
   $github: require 'src/github.coffee'
 
-watch = require 'src/watch.coffee'
+port = R.pipe(
+  translate(middleware),
+  http
+)
 
-port = http(middleware, watch)
-start(app, port, watch)
+start(app, port)
 
