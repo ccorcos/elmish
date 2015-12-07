@@ -35,7 +35,7 @@ debug = (app, http) ->
       when 'pause'
         R.assoc('paused', true, state)
       when 'change_time'
-        R.evolve({time, R.inc}, state)
+        R.evolve({time: R.inc}, state)
       when 'app_action'
         if state.paused
           state
@@ -258,7 +258,7 @@ actions
 
 
 
-debug = ({init view, update}) ->
+debug = ({init, view, update}) ->
   # remember update 
   # for ui, this is the state
   # for http, this is the data
