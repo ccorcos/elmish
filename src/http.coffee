@@ -35,7 +35,6 @@ makeData = (cache, tree) ->
 # get the keys for the requests
 serializeRequests = R.map(R.pipe(R.prop('args'), serialize))
 
-
 http = (fetch$) ->
   
   # http responses
@@ -130,7 +129,7 @@ http = (fetch$) ->
   # get the data out
   data$ = flyd.map(R.prop('data'), http$)
   # monitor streams
-  monitor?({effect$, response$, http$, action$, data$})
+  # monitor?({effect$, response$, http$, action$, data$})
   return data$
 
 module.exports = http

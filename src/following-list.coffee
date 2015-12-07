@@ -14,6 +14,7 @@ view = ({selected, select, data}) ->
   else if data.following
     data.following.map (user) ->
       html.div
+        key: user.id
         className: 'item' + (if user.login is selected then ' selected' else '')
         onClick: -> select(user.login)
         userItem.view(user)

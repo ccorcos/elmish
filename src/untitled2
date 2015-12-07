@@ -1,0 +1,41 @@
+
+
+
+debug.view = (view, time$, action$, time, state, data) ->
+
+  html.div {},
+    html.input
+      type: 'range'
+      min: 0
+      max: state.length
+      onChange: (e) -> time$ {type: 'change_time', time: e.target.value}
+
+    view(action$, state[time], data[time])
+
+debug.update = ({state, data, time}, action) ->
+  switch action.type
+    when 'change_time'
+      state: state
+      data: data
+      time: action.time
+    when
+
+start = ({init, view, update, effect}, handleEffect) ->
+  time$ = flyd.stream()
+
+  action$ = flyd.stream()
+  state$ = flyd.scan(update, init(), action$)
+  effect$ = flyd.map(effect, state$)
+  # handleEffect gets the effect output and returns a data
+  # stream that gets piped back to the views
+  data$ = handleEffect(effect$)
+  html$ = flyd.lift(
+    (state, data) -> view(action$, state, data)
+    state$, data$
+  )
+  flyd.on(render, html$)
+  # monitor?({action$, state$, effect$, data$, html$})
+
+
+
+

@@ -14,7 +14,7 @@ ReactDOM = require('react-dom')
 render = (x) -> ReactDOM.render(x, document.getElementById('root'))
 html = require('react').DOM
 
-start = ({init, view, update, effect}, handleEffect, monitor) ->
+start = ({init, view, update, effect}, handleEffect) ->
   action$ = flyd.stream()
   state$ = flyd.scan(update, init(), action$)
   effect$ = flyd.map(effect, state$)
@@ -26,6 +26,19 @@ start = ({init, view, update, effect}, handleEffect, monitor) ->
     state$, data$
   )
   flyd.on(render, html$)
-  monitor?({action$, state$, effect$, data$, html$})
+  # monitor?({action$, state$, effect$, data$, html$})
+
+
+
+
+simple = ({init, view, update}) ->
+  action$ = flyd.stream()
+  state$ = flyd.scan(update, init(), action$)
+  html$ = flyd.map(R.curry(view)(action$), state$)
+  flyd.on(render, html$)
+  # monitor?({action$, state$, effect$, data$, html$})
+
+
 
 module.exports = start
+

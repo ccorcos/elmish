@@ -14,6 +14,7 @@ view = (data) ->
   else if data.stars
     item = (repo) ->
       html.div
+        key: repo.id
         className: 'repo-item'
         html.div
           className: 'stars'
