@@ -55,7 +55,7 @@ describe('utils.coffee', function (){
 	});
 
 	describe('liftAllObj', function (){
-		it('', function (){
+		it('lifts an object of streams', function (){
 			function make(x, y, z){
 				return {x, y, z};
 			}
