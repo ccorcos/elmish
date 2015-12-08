@@ -22,22 +22,14 @@ describe('translate', function() {
 		});
 
 		it('returns a stream', function() {
-			flyd.isStream(translate(gh)(flyd.stream())).should.be.true;
+			flyd.isStream(translate(gh)({})).should.be.true;
 		});
 
-		it('returns with type: "fetch" and tree', function (done){
+		it('translates object as expected', function (){
 			var middleware = translate(gh);
-			var input = flyd.stream();
-			var output = middleware(input);
+			var output = middleware({custom: {$github: true}});
 
-			flyd.on(function (x){
-				R.path(['tree', 'custom', '$fetch', 'name'], x).should.equal('github');
-				R.prop('type', x).should.equal('fetch');
-				input.end();
-				done();
-			}, output);
-
-			input({custom: {$github: true}});
+			R.path(['custom', '$fetch', 'name'], output).should.equal('github');
 		});
 	});
 });
