@@ -1,5 +1,4 @@
 R = require 'ramda'
-flyd = require 'flyd'
 
 {
   evolveLeavesWhere
@@ -14,7 +13,7 @@ flyd = require 'flyd'
 # the effect$ is a stream of fetch tree before being translated by the 
 # middleware
 
-translate = (middleware) -> (effect$) ->
+translate = (middleware) -> (effects) ->
   # list of middlewares
   wares = R.keys(middleware)
   # check if an object is middleware
@@ -25,15 +24,7 @@ translate = (middleware) -> (effect$) ->
   translateToFetch = (obj) -> middleware[whichMiddleware(obj)](obj)
   # translate all the leaves of the fetch tree through the middleware
   translateLeaves = evolveLeavesWhere(isMiddleware, translateToFetch)
-  # wrap the fetch tree into an action with type: fetch
-  wrapAction = R.assoc('tree', R.__, {type:'fetch'})
-  # translate effect$ to fetch$
-  toFetch = R.pipe(
-    translateLeaves, 
-    wrapAction
-  )
   # fetch action
-  fetch$ = flyd.map(toFetch, effect$)
-  return fetch$
+  translateLeaves(effects)
 
 module.exports = translate
