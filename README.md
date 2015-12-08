@@ -1,5 +1,7 @@
 # Elmish
 
+[![Build Status](https://travis-ci.org/ecwyne/elmish.svg?branch=test-mocha)](https://travis-ci.org/ecwyne/elmish)
+
 This is a toy project implementing the [Elm architecture][arch] with React and Coffeescript.
 
 To get it running:
