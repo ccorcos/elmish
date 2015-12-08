@@ -3,7 +3,7 @@ flyd = require 'flyd'
 
 {
   evolveLeavesWhere
-} = require 'src/utils.coffee'
+} = require './utils.coffee'
 
 # translate effect$ to fetch$ via middleware
 
