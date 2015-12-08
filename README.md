@@ -37,36 +37,138 @@ The Elm archirecture is a very power functional programming pattern for building
 
 ## Thinking...
 
-We need to start thinking about http as just an update function. asynchronous services should have declarative interfaces.
+action, state -> state
 
-By lifting the view, update, init functions, we can get time travel for the ui. If we can consider the http service to have a "view" function of greating the data tree from the state then we can lift both of those as well. Then we can merge all time travel instances into one. 
+        state -> $github   -> $fetch  ->| fetcher    |-> action
+              -> $twitter  /
+              -> $chatroom -> $meteor ->| subscriber |-> action
+              -> html                 ->| renderer   |-> action
+              -> animation            ->| ticker     |-> action
 
-effect is much like view in that it presents an async declarative interface (internet and browser).
+the -er's perform mutations / side-effects and have async callbacks.
+we should be to define these signals in a way that we can lift their "view" functions which provide the declarative data structure with async callbacks to dispatch actions.
 
-it feels like we're going to need data to be involved in some update function so we can easily do undo/redo and time-travel.
+I like how the fetcher works again, like it did in beyond/http.coffee, just managing whats needed and whats in flight. we need it this way so we can do time-travelling and abstract well.
 
-The fundamental problem here is how to keep track of effects without spamming http while going back and forth.
+github = (dispatch, state) ->
+  gh.following
+    limit: 20
+    dispatch: dispatch
+    user.fields()
+  
+This is clever but we end up doubling the render cycle. What if the data is already cached? We dont want to flash a loading screen.
 
-THERE NEEDS TO BE A PAUSE/PLAY. if we're blocking effects from being sent...
+That changes the way we look at this with the action coming out of the async github tree
+
+action, state -> state
+
+        state -> $github   -> $fetch  ->| fetcher    |-> action
+              -> $twitter  /
+              -> $chatroom -> $meteor ->| subscriber |-> action
+              -> html                 ->| renderer   |-> action
+              -> animation            ->| ticker     |-> action
+
+        state -> html            ->| render |-> action
+              -> animation       ->| reqAF  |-> action
+              -> github -> fetch -> data 
+                                 \>| fetcher |-> action
+
+github needs some kind of middleware to generate the date between update and view.
+
+init : () -> state
+
+update : (state, action) -> state
+
+view : (dispatch, state) -> html
+
+The confusing part is that we use the effects tree twice. Once to generate the data in the state in case any is cached. And again to generate a delarative message to http to do diffing and fetching. Now we've leaked state to http again!
+
+ideas:
+1) we could use middleware to populate the github tree template before it heads off to view. This would be similar to what we just had except state and effects would be in the same atom. This means, we'll be parsing the state tree every time for queries. This is definitely a step in the right direction. but not all the way there because we've still leaked state to http.
+2) http is a high-order function that maintiains its own cache in the state/update function and crawls its children's states to populate them! :) it
+
+httpUpdate = (state, action) ->
+  switch action.type
+    when ''
+      update the leaves based on the http cache right here.
+      the items in the cache now have the translated versions
+      at the very top, we have middleware to pull all of this out of the state and pass it to the fetcher which keeps track of pending and sends responses back.?
+
+
+init : () -> state
+
+update : (state, action) -> state
+
+view : (dispatch, state) -> html
+
+its all about pure functions. remember. view/render and populting data and fetching are all similar in that they are just side-effects of state. they're all just views, but since we're populating data, now we need to string them along. 
+
+flyd.on(
+  (state) ->
+    populateWithData(state)
+, state$)
+
+
+fuck, lost again. what if we crawl the tree and accumulate fragmenets to compose queries together. so we get the queries nicely. This state needs to contain the http state, the app state, etc. damn. so confusing!
 
 
 
-OK. actually think about this. the debug and the app are separated in a unique way. 
 
 
-the data and the state of the app get piped to debug which keeps track of the history and a time. the ui can trigger an event to pause play, or change time. 
+we have the html abstracted up as well, and at some point we need to hook in the disaptch. we need to do this like an event listener in react. remember, this doesnt need to be serializable since its not an action. dispatch will wrap up the action. actions could also be sent in batch so multiple components listening to the same data get updates in the same render loop. we could even use requestAnimationFrame to do the update batching?
 
 
 
-** 
+view = ({selected, select, data}) ->
+  if data.following.$pending
+    spinner()
+  else if data.following
+    data.following.map (user) ->
+      html.div
+        key: user.id
+        className: 'item' + (if user.login is selected then ' selected' else '')
+        onClick: -> select(user.login)
+        userItem.view(user)
+  else if data.error
+    html.div
+      className: 'error'
+      error.message    
+  else
+    console.warn("shouldn't be here")
 
-We have app, debug, and http. Lets make them all work gracefully together.
-
-theres no reason http has to have its own scan. we need to compose these updates!
-
-**
 
 
+ui component:
+- init
+- update
+
+- effects
+- view
+
+
+
+What if the effects were nested right into the state with $fetch, etc.
+The data comes right back to us in the state however we need it. we just need middleware now to handle all the side-effects
+
+init    : () -> state
+update  : (state, action) -> state
+view    : (dispatch, state) -> html
+
+
+init    : () -> state
+update  : (state, action) -> {state, effects}
+view    : (dispatch, state) -> html
+
+
+
+
+ui.effects : (state) -> effects
+api        : (effects) -> fxEffects
+fx.wrap    : (fxEffects) -> action
+
+fx.init    : () -> state
+fx.update  : (state, action) -> state
+fx.data    : (dispatch, state) -> data
 
 
 
