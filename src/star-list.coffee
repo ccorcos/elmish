@@ -5,7 +5,7 @@ require 'src/star-list.styl'
 
 spinner = require 'src/spinner.coffee'
 
-effect = (login) ->
+effects = (login) ->
   {$github: ['stars', {login}, ['full_name', 'html_url', 'stargazers_count']]}
 
 view = (data) ->
@@ -36,4 +36,4 @@ view = (data) ->
     console.warn("this shouldn't happen")
     
 
-module.exports = {effect, view}
+module.exports = {effects, view}

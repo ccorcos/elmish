@@ -5,7 +5,7 @@ userItem = require('src/user-item')
 spinner = require 'src/spinner.coffee'
 
 # request a query for who's following this user.
-effect = (state) ->
+effects = (state) ->
   {$github: ['following', {limit: 20}, userItem.fields()]}
   
 view = ({selected, select, data}) ->
@@ -25,4 +25,4 @@ view = ({selected, select, data}) ->
   else
     console.warn("shouldn't be here")
 
-module.exports = {effect, view}
+module.exports = {effects, view}

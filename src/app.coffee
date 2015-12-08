@@ -12,13 +12,13 @@ cond = (a,b,c) -> if a then b() else c?()
 init = () ->
   selected: null
 
-effect = (state) ->
+effects = (state) ->
   cond state.selected, 
     ->
-      users: followingList.effect()
-      stars: starList.effect(state.selected)
+      users: followingList.effects()
+      stars: starList.effects(state.selected)
     ->
-      users: followingList.effect()
+      users: followingList.effects()
 
 update = (state, action) ->
   switch action.type
@@ -42,4 +42,4 @@ view = (dispatch, state, data) ->
           'Please select a user from the list on the left.'
 
 
-module.exports = {init, effect, update, view}
+module.exports = {init, effects, update, view}

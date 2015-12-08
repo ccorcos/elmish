@@ -56,3 +56,76 @@ startfx = (app, fx) ->
   )
   flyd.on(render, html$)
   # monitor?({action$, state$, effect$, data$, html$})
+
+
+
+
+
+
+
+
+# hold both http and app state. 
+# throw the http side-effect in the "view"
+
+###
+ui.init    : () -> state
+ui.update  : (state, action) -> state
+ui.view    : (dispatch, state, data) -> html
+ui.effects : (state) -> effects
+
+fx.init    : () -> state
+fx.wrap    : (effects) -> action
+fx.update  : (dispatch, state, action) -> state
+fx.data    : (state) -> data
+###
+
+start = (app, fx) ->
+  response$ = flyd.stream()
+  dispatch$ = flyd.stream()
+
+  action$ = flyd.merge(
+    flyd.map(
+      (action) -> {type: 'app', action}
+      dispatch$
+    )
+    flyd.map(
+      (action) -> {type: 'fx', action}
+      response$
+    )
+  )
+
+  init = ->
+    state = {}
+    state.app = app.init()
+    state.fx = fx.update(response$, fx.init(), fx.wrap(app.effects(state.app)))
+    return state
+
+  view = (state) ->
+    app.view(dispatch$, state.app, fx.data(state.fx))
+
+  update = (state, action) ->
+    switch type
+      when 'app'
+        next = {}
+        next.app = app.update(state.app, action.action)
+        next.fx = fx.update(response$, state.fx, fx.wrap(app.effects(state.app)))
+        return next
+      when 'fx'
+        next = {}
+        next.app = state.app
+        next.fx = fx.update(response$, state.fx, action.action)
+        return next
+    else
+      console.warn(action)
+      return state
+
+  state$ = flyd.scan(update, init(), action$)
+  html$ = flyd.map(view, state$)
+  flyd.on(render, html$)
+
+
+
+
+
+
+

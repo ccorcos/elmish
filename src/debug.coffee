@@ -5,22 +5,27 @@ html = require('react').DOM
 ###
 app.init     : () -> state
 app.update   : (state, action) -> state
-app.view     : (dispatch, state, data) -> html
+app.view     : (dispatch) -> (state, data) -> html
 app.effect   : (state) -> tree
 
 http.init    : () -> state
 http:update  : (state, action) -> state
-http:fetch   : (state, effects) -> state
+http:fetch   : (dispatch) -> (state, effects) -> state
 http:data    : (state) -> data
 
 debug.init   : () -> state
 debug.update : (state, action) -> state
-debug.view   : (dispatch, state) -> state
-###
+debug.view   : (dispatch) -> (state) -> state
 
+TODO
+- http needs to keep track of pending so we can cancel and restart
+  when we pause and play time. it cant be imperative though. 
+
+###
 
 debug = (app, http) ->
 
+  # a list of app and http states
   init = ->
     state = {}
     state.app = app.init()

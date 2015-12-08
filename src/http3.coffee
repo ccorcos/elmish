@@ -29,8 +29,9 @@ init = ->
   requests: []
   cache: {}
   effects: {}
+  send: []
 
-update = (dispatch) -> (state, action) ->
+update = (state, action) ->
   switch action.type
     when 'effects'
       # diff the previous requests with the next requests
@@ -48,19 +49,7 @@ update = (dispatch) -> (state, action) ->
             $pending: true, 
             $startedAt: Date.now()
 
-      # send off any new requests responding with the
-      # {name: result} or {error}
-      newRequests.map ({args, name}) ->
-        window.fetch.apply(window, args)
-          .then (response) -> response.json()
-          .then (result) -> {"#{name}": result}
-          .catch (error) -> {error}
-          .then (result) ->
-            dispatch
-              type: 'response'
-              key: serialize(args)
-              value: result
-
+      send: newRequests
       requests: nextRequests
       cache: nextCache
       effects: action.effects
@@ -68,15 +57,29 @@ update = (dispatch) -> (state, action) ->
     when 'response'
       R.evolve({
         cache: R.assoc(action.key, action.value)
+        send: R.always([])
       }, state)
      
-data = ({cache, effects}) ->
+data = (dispatch, state) ->
+  # send off any new requests responding with the
+  # {name: result} or {error}
+  state.send.map ({args, name}) ->
+    window.fetch.apply(window, args)
+      .then (response) -> response.json()
+      .then (result) -> {"#{name}": result}
+      .catch (error) -> {error}
+      .then (result) ->
+        dispatch
+          type: 'response'
+          key: serialize(args)
+          value: result
+
   evolveLeavesWhere(
     R.has('$fetch'),
     (req) ->
       key = serialize(R.path(['$fetch', 'args'], req))
-      return cache[key]
-    effects
+      return state.cache[key]
+    state.effects
   )
 
 wrap = (effects) ->
