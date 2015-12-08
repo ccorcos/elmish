@@ -21,10 +21,6 @@ describe('translate', function() {
 			(typeof translate(gh)).should.equal('function');
 		});
 
-		it('returns a stream', function() {
-			flyd.isStream(translate(gh)({})).should.be.true;
-		});
-
 		it('translates object as expected', function (){
 			var middleware = translate(gh);
 			var output = middleware({custom: {$github: true}});

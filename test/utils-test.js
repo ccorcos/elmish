@@ -10,14 +10,14 @@ var {
 describe('utils.coffee', function (){
 	describe('isObject', function (){
 		it('knows what an object is', function (){
-			isObject({ima: 'object'}).should.be.true;
+			isObject({ima: 'object'}).should.equal(true);
 			isObject('ima string').should.equal(false);
 		});
 	});
 
 	describe('isArray', function (){
 		it('knows what an array is', function (){
-			isArray(['i', 'am', 'an', 'arra']).should.be.true;
+			isArray(['i', 'am', 'an', 'arra']).should.equal(true);
 			isArray('ima string').should.equal(false);
 		});
 	});
@@ -30,7 +30,7 @@ describe('utils.coffee', function (){
 		it('evolves leaves that according to fn', function (){
 			var output = evolveLeavesWhere(R.is(Number), R.inc, obj);
 			var expected = {obj: {val: 1}, arr: [1,2,3], num: 1};
-			R.equals(output, expected).should.be.true;
+			R.equals(output, expected).should.equal(true);
 		});
 	});
 
@@ -39,7 +39,7 @@ describe('utils.coffee', function (){
 		it('finds leaves by function', function (){
 			var output = leavesWhere(R.is(Number), obj);
 			var expected = [0,0,1,2,0];
-			R.equals(output, expected).should.be.true;
+			R.equals(output, expected).should.equal(true);
 		});
 	});
 
@@ -47,7 +47,7 @@ describe('utils.coffee', function (){
 		it('finds similarities and differences between arrays', function (){
 			var output = vennDiagram([1,2,3], [3,4,5])
 			var expected = [[1,2], [3], [4,5]];
-			R.equals(output, expected).should.be.true;
+			R.equals(output, expected).should.equal(true);
 		});
 	});
 
