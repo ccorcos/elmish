@@ -43,6 +43,6 @@
     ]
   },
   "scripts": {
-    "test": "node node_modules/mocha/bin/mocha --watch"
+    "test": "node node_modules/mocha/bin/mocha"
   }
 }
