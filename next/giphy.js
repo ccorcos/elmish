@@ -13,7 +13,7 @@ const loadingGif = require('tutorial/loading.gif')
 const errorGif = require("tutorial/error.gif")
 
 const randomUrl = (topic) =>
-  "http://api.giphy.com/v1/gifs/random?api_key=dc6zaTOxFJmzC&tag=#{topic}"
+  `http://api.giphy.com/v1/gifs/random?api_key=dc6zaTOxFJmzC&&rating=pg&tag=${topic}`
 
  // init : () -> state
 const init = (topic="explosions") => {
