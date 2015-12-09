@@ -16,13 +16,10 @@ The Elm archirecture is a very power functional programming pattern for building
 
 ## To Do
 
-- time-travel component
 - time-travel import/export/save sequences
-- hot-swap with webpack
-
-- convert github example to use the new pattern
+- convert github example to js and use the new pattern
+- composable query component / github service
 - http side-effect caching component
-
 - list of components -- how to handle multiple dispatch handlers? should just compose them but...
 
 - performance, lazy, memoize
