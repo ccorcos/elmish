@@ -7,6 +7,7 @@ effects : (dispatch, state) -> {html, http}
 // import Type from 'union-type'
 import curry from 'ramda/src/curry'
 import merge from 'ramda/src/merge'
+import assoc from 'ramda/src/assoc'
 import h     from 'react-hyperscript'
 
 const loadingGif = require('tutorial/loading.gif')
@@ -23,6 +24,8 @@ const init = (topic="explosions") => {
 // update : (dispatch, state, action) -> state
 const update = curry((state, action) => {
   switch (action.type) {
+    case 'setTopic':
+      return assoc('topic', action.topic, state);
     case 'newGif':
       return merge(state, {
         url: action.url,
@@ -49,7 +52,13 @@ let view = curry((dispatch, state) => {
   return {
     html:
       h('div.giphy', [
-        h('h2.topic', state.topic),
+        h('div.topic', [
+            h('h2.topic', state.topic),
+            h('input.topic-input', {
+              value: state.topic,
+              onChange: (e) => dispatch({type: 'setTopic', topic: e.target.value})
+            })
+        ]),
         h('img', {src: state.url}),
         h('button', {
           onClick: () => dispatch({type: 'anotherGif'})
