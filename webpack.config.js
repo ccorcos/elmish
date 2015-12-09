@@ -35,7 +35,7 @@ module.exports = {
   },
   module: {
     loaders: [
-      { test: /\.js$/, loader: "babel", exclude: /(node_modules|bower_components)/ },
+      { test: /\.js$/, loader: "babel", exclude: /(node_modules)/, query: { presets: ['es2015'] } },
       { test: /\.coffee$/, loader: "coffee" },
       { test: /\.styl$/, loader: 'style-loader!css-loader!stylus-loader' },
       { test: /\.(svg|png|jpe?g|gif|ttf|woff2?|eot)$/, loader: 'url?limit=8182' }
@@ -46,6 +46,9 @@ module.exports = {
   },
   plugins: [
     new webpack.HotModuleReplacementPlugin(),
-    new webpack.NoErrorsPlugin()
+    new webpack.NoErrorsPlugin(),
+    new webpack.ProvidePlugin({
+      'fetch': 'imports?this=>global!exports?global.fetch!whatwg-fetch'
+    })
   ]
 }

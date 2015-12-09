@@ -12,6 +12,7 @@
     "ramda": "^0.18.0",
     "react": "^0.14.0",
     "react-dom": "^0.14.0",
+    "react-hyperscript": "^2.2.0",
     "rx-lite": "^4.0.6",
     "union-type": "^0.1.6",
     "whatwg-fetch": "^0.10.0"
