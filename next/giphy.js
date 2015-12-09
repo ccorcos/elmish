@@ -29,6 +29,7 @@ const update = curry((state, action) => {
         pending: false
       })
     case 'errorGif':
+      console.warn("ERROR:", state, action)
       return merge(state, {
         url: errorGif,
         pending: false
@@ -59,10 +60,12 @@ let view = curry((dispatch, state) => {
         key: state.count,
         url: randomUrl(state.topic),
         method: 'get',
-        onSuccess: (response) =>
-          dispatch({type: 'newGif', url: response.json.data.image_url}),
-        onError: (response) =>
-          dispatch({type: 'errorGif', error: error})
+        onSuccess: (response) => {
+          return dispatch({type: 'newGif', url: response.json.data.image_url})
+        },
+        onError: (response) => {
+          return dispatch({type: 'errorGif', error: response})
+        }
       }]
   }
 })

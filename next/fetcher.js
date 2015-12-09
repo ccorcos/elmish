@@ -18,27 +18,38 @@ const fetchWithJson = (url, options) => {
     })
 }
 
+function exposeErrors(fn) {
+  return function() {
+    try {
+      return fn.apply(null, arguments)
+    } catch (e) {
+      console.error(e)
+      throw e
+    }
+  }
+}
+
 let pending = []
 
-const fetch = (requests) => {
+const fetch = (requests=[]) => {
   const newRequests = differenceWith(sameKey, requests, pending)
   pending = requests
   newRequests.map((request) => {
     fetchWithJson(request.url, omit(['key', 'url'], request))
-      .then((result) => {
+      .then(exposeErrors((result) => {
         // only dispatch the action if its being requested still
         const req = find(propEq('key', request.key), pending)
         if (req) {
           req.onSuccess(result)
         }
-      })
-      .catch((error) => {
+      }))
+      .catch(exposeErrors((error) => {
         // only dispatch the action if its being requested still
         const req = find(propEq('key', request.key), pending)
         if (req) {
           req.onError(error)
         }
-      })
+      }))
   })
 }
 
