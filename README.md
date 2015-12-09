@@ -23,6 +23,8 @@ The Elm archirecture is a very power functional programming pattern for building
 - convert github example to use the new pattern
 - http side-effect caching component
 
+- list of components -- how to handle multiple dispatch handlers? should just compose them but...
+
 - performance, lazy, memoize
 
 - meteor http side-effect

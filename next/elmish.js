@@ -8,9 +8,9 @@ import flyd  from 'flyd'
 
 const start = ({init, view, update}) => {
   const action$ = flyd.stream()
-  const model$ = flyd.scan(update, init(), action$)
-  const effect$ = flyd.map(view(action$), model$)
-  return {action$, model$, effect$}
+  const state$ = flyd.scan(update, init(), action$)
+  const effect$ = flyd.map(view(action$), state$)
+  return {action$, state$, effect$}
 }
 
 export default start
