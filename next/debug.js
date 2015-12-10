@@ -7,6 +7,8 @@ import inc    from 'ramda/src/inc'
 import pipe   from 'ramda/src/pipe'
 import h      from 'react-hyperscript'
 
+import 'styles/debug.styl'
+
 const debug = (app) => {
   
   const init = () => {
@@ -52,11 +54,8 @@ const debug = (app) => {
     
     const html = 
       h('div.debug', [
-        appEffects.html,
+        h('div.app', {}, appEffects.html),
         h('div.panel', [
-          h(`button.${toggle}`, {
-            onClick: () => dispatch({type: toggle})
-          }, toggle),
           h(`input`, {
             type: 'range',
             min: 0,
@@ -64,7 +63,10 @@ const debug = (app) => {
             value: state.time,
             onChange: (e) => dispatch({type: 'set_time', time: Number(e.target.value)})
           }),
-          h(`label`, {}, state.time)
+          h(`label`, {}, state.time),
+          h(`button.${toggle}`, {
+            onClick: () => dispatch({type: toggle})
+          }, toggle)
         ])
       ])
       
