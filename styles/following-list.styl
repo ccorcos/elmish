@@ -1,11 +1,12 @@
-.item.selected
-  background: #bbb
+@import 'nib'
 
-.user-item
+.user
   display: flex
   flex-direction: row
   margin-bottom: 5px
-  .image 
+  &.selected
+    background: #bbb
+  img
     height: 4em
     width: 4em
   .name

@@ -1,9 +1,3 @@
-/*
-init    : () -> state
-update  : (state, action) -> state
-effects : (dispatch, state) -> {html, http}
-*/
-
 // import Type from 'union-type'
 import curry from 'ramda/src/curry'
 import merge from 'ramda/src/merge'
@@ -20,7 +14,7 @@ const init = (topic="explosions") => {
   return { topic: topic, url: loadingGif, count: 0, pending: true}
 }
 
-// update : (dispatch, state, action) -> state
+// update : (state, action) -> state
 const update = curry((state, action) => {
   switch (action.type) {
     case 'newGif':
@@ -45,7 +39,7 @@ const update = curry((state, action) => {
   }
 })
 
-let view = curry((dispatch, state) => {
+let effects = curry((dispatch, state) => {
   return {
     html:
       h('div.giphy', [
@@ -70,4 +64,4 @@ let view = curry((dispatch, state) => {
   }
 })
 
-export default {init, view, update}
+export default {init, effects, update}

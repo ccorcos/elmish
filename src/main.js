@@ -1,9 +1,10 @@
-import start from 'next/elmish'
-import fetch from 'next/fetcher'
+import start    from 'src/elmish'
+import debug    from 'src/debug'
+import fetch    from 'src/http'
 import ReactDOM from 'react-dom'
-import app from 'next/giphy'
-import debug from 'next/debug'
-import flyd from 'flyd'
+import flyd     from 'flyd'
+
+import app      from 'src/app'
 
 const render = (html) =>
   ReactDOM.render(html, document.getElementById('root'))
@@ -18,19 +19,19 @@ let handler = flyd.map(({html, http}) => {
 // check if HMR is enabled
 if (module.hot) {
   // accept update of dependency
-  module.hot.accept(["next/giphy", "next/debug"], () => {
+  module.hot.accept(["src/giphy", "src/debug"], () => {
     // save the previous state of the application
     const state = state$()
     // stop all side-effects
     handler.end(true)
     // import the latest versions
-    let app = require('next/giphy').default
-    let debug = require('next/debug').default
+    let app = require('src/giphy').default
+    let debug = require('src/debug').default
     // override init
-    const {view, update} = debug(app)
+    const {effects, update} = debug(app)
     const init = () => state
     // mutate and restart side-effects
-    const result = start({init, view, update})
+    const result = start({init, effects, update})
     effect$ = result.effect$
     state$ = result.state$
     handler = flyd.map(({html, http}) => {

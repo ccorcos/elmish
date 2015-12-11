@@ -16,11 +16,20 @@ The Elm archirecture is a very power functional programming pattern for building
 
 ## To Do
 
+- hot-key service for hiding and showing debug
+
+- theres a problem with star-list
+  - queries arent composable.
+  - we want to specify the query in the parent and the list should just have a fragment of a query.
+  - wherever the queries are composed, we can then do some simple http caching
+
+- listOf
+  - how to handle multiple dispatch handlers?
+- chatroom example
+  - graphql? falcor? express? meteor?
+
+- tutorial examples to js
 - time-travel import/export/save sequences
-- convert github example to js and use the new pattern
-- composable query component / github service
-- http side-effect caching component
-- list of components -- how to handle multiple dispatch handlers? should just compose them but...
 
 - performance, lazy, memoize
 

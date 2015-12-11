@@ -8,7 +8,7 @@ module.exports = {
   entry: {
     app: [
     'webpack-hot-middleware/client',
-    'entry.coffee'
+    'entry.js'
     ],
   },
   output: {
@@ -23,11 +23,10 @@ module.exports = {
       '',
       '.js',
       '.coffee',
-      '.scss',
+      '.styl',
       '.png',
       '.jpg',
-      '.svg',
-      '.styl'
+      '.svg'
     ],
     modulesDirectories: [
       'node_modules'

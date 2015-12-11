@@ -1,7 +1,9 @@
 import differenceWith from 'ramda/src/differenceWith'
-import find from 'ramda/src/find'
-import propEq from 'ramda/src/propEq'
-import omit from 'ramda/src/omit'
+import find           from 'ramda/src/find'
+import propEq         from 'ramda/src/propEq'
+import omit           from 'ramda/src/omit'
+
+import 'whatwg-fetch'
 
 const sameKey = (a, b) => a.key === b.key
 
