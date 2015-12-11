@@ -1,4 +1,4 @@
-
+import assoc  from 'ramda/src/assoc'
 import curry  from 'ramda/src/curry'
 import merge  from 'ramda/src/merge'
 import evolve from 'ramda/src/evolve'
@@ -32,7 +32,7 @@ const button = (name, props) => {
 const debug = (app) => {
 
   const init = () => {
-    return {time: 0, states:[app.init()], live: true}
+    return {time: 0, states:[app.init()], live: true, hidden: false }
   }
 
   const update = curry((state, action) => {
@@ -60,6 +60,11 @@ const debug = (app) => {
         } else {
           return state
         }
+      case 'toggle': {
+        return merge(state, {
+          hidden: !state.hidden
+        })
+      }
       default:
         return state
     }
@@ -70,12 +75,12 @@ const debug = (app) => {
   const effects = curry((dispatch, state) => {
     const toggle = (state.live ? 'pause' : 'play')
     const childDispatch = (state.live ? pipe(toChildAction, dispatch) : () => {})
-    const appEffects = app.effects(childDispatch, state.states[state.time])
+    const fx = app.effects(childDispatch, state.states[state.time])
 
     const html =
       h('div.debug', [
-        h('div.app', {}, appEffects.html),
-        h('div.panel', [
+        h('div.app', {}, fx.html),
+        h('div.panel' + (state.hidden ? '.hidden' : ''), [
           button(toggle, {
             onClick: () => dispatch({type: toggle})
           }),
@@ -90,10 +95,17 @@ const debug = (app) => {
         ])
       ])
 
+    const hotkeys = {
+      'control d': () => dispatch({type: 'toggle'})
+    }
+
     if (state.live) {
-      return merge(appEffects, {html})
+      return pipe(
+        assoc('html', html),
+        assoc('hotkeys', merge(hotkeys, fx.hotkeys || {}))
+      )(fx)
     } else {
-      return {html}
+      return {html, hotkeys}
     }
   })
 

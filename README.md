@@ -16,8 +16,6 @@ The Elm archirecture is a very power functional programming pattern for building
 
 ## To Do
 
-- hot-key service for hiding and showing debug
-
 - theres a problem with star-list
   - queries arent composable.
   - we want to specify the query in the parent and the list should just have a fragment of a query.

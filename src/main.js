@@ -1,6 +1,7 @@
 import start    from 'src/elmish'
 import debug    from 'src/debug'
 import fetch    from 'src/http'
+import keys     from 'src/hotkeys'
 import ReactDOM from 'react-dom'
 import flyd     from 'flyd'
 
@@ -11,9 +12,10 @@ const render = (html) =>
 
 let {effect$, state$} = start(debug(app))
 
-let handler = flyd.map(({html, http}) => {
+let handler = flyd.map(({html, http, hotkeys}) => {
   render(html)
   fetch(http)
+  keys(hotkeys)
 }, effect$)
 
 // check if HMR is enabled

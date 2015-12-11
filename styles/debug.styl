@@ -2,6 +2,8 @@
 
 .debug
   .panel
+    transition: transform 0.2s ease-in-out
+    transform: translate(0, 0, 0)
     position: fixed
     bottom: 0
     left: 0
@@ -31,3 +33,5 @@
       svg
         height: 30px
         width: 30px
+    &.hidden
+      transform: translate3d(0, 50px, 0)
