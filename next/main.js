@@ -27,7 +27,7 @@ if (module.hot) {
     let app = require('next/giphy').default
     let debug = require('next/debug').default
     // override init
-    const {view, update} = debug(app)    
+    const {view, update} = debug(app)
     const init = () => state
     // mutate and restart side-effects
     const result = start({init, view, update})
