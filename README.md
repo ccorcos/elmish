@@ -16,6 +16,20 @@ The Elm archirecture is a very power functional programming pattern for building
 
 ## To Do
 
+- GraphQL
+  - create schema without "this" or "new"
+    - https://github.com/devknoll/graphql-schema
+    - https://github.com/matthewmueller/graph.ql
+  - use JSON query instead of stings
+    - https://github.com/ooflorent/babel-plugin-graphql
+  - client cache?
+    - read cache sync and rest async?
+  - mutations
+    - latency compensation
+    - reactivity
+  - backend? database? websockets?
+
+
 - theres a problem with star-list
   - queries arent composable.
   - we want to specify the query in the parent and the list should just have a fragment of a query.

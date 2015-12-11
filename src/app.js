@@ -39,13 +39,11 @@ const effects = curry((dispatch, state) => {
   const starDispatch = (action) => dispatch({type: 'star_action', action})
   const followingDispatch = (action) => dispatch({type: 'following_action', action})
 
-  const empty = {
+  const emptyStarList = {
     html: h('div.nothing', 'Please select a user from the list on the left.'),
     http: []
   }
-  const stars = state.selected ? StarList.effects(starDispatch, state.stars, {
-    selected: state.selected
-  }) : empty
+  const stars = state.selected ? StarList.effects(starDispatch, state.stars) : emptyStarList
   const following = FollowingList.effects(followingDispatch, state.following, {
     selected: state.selected,
     select: (id) => dispatch({type:'select_user', id})

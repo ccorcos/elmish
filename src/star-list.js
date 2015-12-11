@@ -37,7 +37,7 @@ const update = curry((state, action) => {
 })
 
 // effects : (dispatch, state) -> {html, http, ...}
-let effects = curry((dispatch, state, {selected}) => {
+let effects = curry((dispatch, state) => {
 
   const item = (repo) => {
     return (
@@ -47,8 +47,6 @@ let effects = curry((dispatch, state, {selected}) => {
       ])
     )
   }
-
-  console.log(selected)
 
   return {
     html:
