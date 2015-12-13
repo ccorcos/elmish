@@ -1,1 +1,1 @@
-import 'src/main'
+import 'tutorial/1/counter'

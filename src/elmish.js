@@ -1,7 +1,14 @@
 /*
+This is the heart of any elmish application which scans over actions to update
+the state map to all the effects. It takes a single argument which is a UI
+component consisting of the following function signatures:
+
 init    : () -> state
 update  : (state, action) -> state
-effects : (action, state) -> {html, http}
+effects : (dispatch, state) -> fx
+
+It outputs three streams, a stream of actions, a stream of state, and a stream
+of effects.
 */
 
 import flyd  from 'flyd'
