@@ -16,6 +16,16 @@ The Elm archirecture is a very power functional programming pattern for building
 
 ## To Do
 
+- monadic service types
+- move on to giphy example
+- debug example
+
+- github example
+- socket.io chatroom example
+- meteor example with the new
+
+
+
 - list of component example
 - laziness (?) and immutability
 - immutable.js and functionize

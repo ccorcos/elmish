@@ -1,8 +1,17 @@
+/*
+This hotkey service takes objects of the form {hotkey:callback}. The hotkey
+string needs to be space-separated hotkey descriptors like "cmd d" or
+"alt shift 4". Notice that "shift" and "4" doesn't mean "$" so make sure your
+descriptors only reference basic keys without modifiers.
+*/
+
+import flyd from 'flyd'
 import complement from 'ramda/src/complement'
-import uniq   from 'ramda/src/uniq'
+import uniq from 'ramda/src/uniq'
 import append from 'ramda/src/append'
 import filter from 'ramda/src/filter'
 import equals from 'ramda/src/equals'
+import prop from 'ramda/src/prop'
 
 const keymap = {
   8: 'backspace',
@@ -95,27 +104,28 @@ const setListeners = (l={}) => {
   listeners = translateHotkeyListeners(l)
 }
 
-const fire = (e, hotkey) => {
-  const callback = listeners[hotkey]
-  if (callback) {
-    e.preventDefault()
-    e.stopPropagation()
-    callback(hotkey)
-  }
-}
-
 document.addEventListener('keydown', (e) => {
   if (isInput(e)) { return }
   const key = lookupEventKey(e)
   addKey(key)
   const hotkey = currentHotKey()
-  fire(e, hotkey)
+  const callback = listeners[hotkey]
+  if (callback) {
+    e.preventDefault()
+    e.stopPropagation()
+    callback(hotkey)
+    // keyup only fires *after* the default action has been performed
+    // http://www.quirksmode.org/dom/events/keys.html
+    removeKey(key)
+  }
 })
 
 document.addEventListener('keyup', (e) => {
-  if (isInput(e)) { return }
+  if (isInput(e)) { return}
   const key = lookupEventKey(e)
   removeKey(key)
 })
 
-export default setListeners
+const hotKeyListener = (effect$) => flyd.on(setListeners, flyd.map(prop('hotkeys'), effect$))
+
+export default hotKeyListener

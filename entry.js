@@ -2,4 +2,5 @@
 // import 'tutorial/2-counter-flyd'
 // import 'tutorial/3-counter-complete'
 // import 'tutorial/4-list-of-counters'
-import 'tutorial/5-undoable'
+// import 'tutorial/5-undoable'
+import 'tutorial/6-undoable-with-hotkeys'
