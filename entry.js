@@ -1,1 +1,1 @@
-import 'tutorial/1/counter'
+import 'tutorial/3-counter-complete'

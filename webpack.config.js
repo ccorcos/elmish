@@ -22,6 +22,7 @@ module.exports = {
     extensions: [
       '',
       '.js',
+      '.jsx',
       '.coffee',
       '.styl',
       '.png',
@@ -34,7 +35,7 @@ module.exports = {
   },
   module: {
     loaders: [
-      { test: /\.js$/, loader: "babel", exclude: /(node_modules)/, query: { presets: ['es2015'], "plugins": ["syntax-object-rest-spread"] } },
+      { test: /\.jsx?$/, loader: "babel", exclude: /(node_modules)/, query: { presets: ['es2015', 'react'], "plugins": ["syntax-object-rest-spread"] } },
       { test: /\.coffee$/, loader: "coffee" },
       { test: /\.styl$/, loader: 'style-loader!css-loader!stylus-loader' },
       { test: /\.(svg|png|jpe?g|gif|ttf|woff2?|eot)$/, loader: 'url?limit=8182' }

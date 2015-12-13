@@ -16,7 +16,17 @@ The Elm archirecture is a very power functional programming pattern for building
 
 ## To Do
 
-- rewrite tutorials in js, reorganize them, and reference elm architecture tutorial. extend with simple github example and more complicated github examples. add some styles too.
+- list of component example
+- laziness (?) and immutability
+- immutable.js and functionize
+- undoable component example
+- giphy + http example
+- debug example
+- github example
+- chatroom example
+
+
+
 
 - polish the http service
 - concepts of composable queries and fragments as functions
