@@ -16,18 +16,16 @@ The Elm archirecture is a very power functional programming pattern for building
 
 ## To Do
 
-react declarative tree:
-{
-  type: 'div',
-  props: {
+- rewrite tutorials in js, reorganize them, and reference elm architecture tutorial. extend with simple github example and more complicated github examples. add some styles too.
 
-  }
-  children: [{
-    type: 'span'
-    props: {}
+- polish the http service
+- concepts of composable queries and fragments as functions
+- http caching
 
-  }]
-}
+- oauth service
+- passport.io service?
+
+- chatroom with graphql
 
 
 
@@ -64,12 +62,6 @@ react declarative tree:
   - custom auth or passport.io
   - socket.io or elixir
   - mongo or redis
-
-
-- theres a problem with star-list
-  - queries arent composable.
-  - we want to specify the query in the parent and the list should just have a fragment of a query.
-  - wherever the queries are composed, we can then do some simple http caching
 
 - listOf
   - how to handle multiple dispatch handlers?
@@ -123,8 +115,58 @@ init    : () -> state
 update  : (state, action) -> state
 effects : (dispatch, state) -> {html, fetch, meteor}
 
+## Notes
 
+React has a basic JSON declarative tree:
 
+{
+  type: 'div',
+  props: {
+    className: 'user-item'
+    onClick: (e) => this.setState({selected: user.id})
+  }
+  children: [{
+    type: 'span'
+    props: {}
+    children: [user.id]
+  }]
+}
+
+When we build our user interface, we're just patching these trees together.
+
+GraphQL has a basic declarative JSON tree as well:
+
+{
+  fields: {
+    followers: {
+      params: {
+        userId: user.id
+      },
+      fields: {
+        name: {},
+        posts: {
+          params: {
+            limit: 20
+          },
+          fields: {
+            count: {},
+            edges: {
+              ?? https://github.com/ooflorent/babel-plugin-graphql
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+GraphQL gets patched together by.... Relay, fragments...?
+
+We can create similar structures for other services as well.
+
+- Hotkeys
+- HTTP
+- Meteor
 
 [arch]: https://github.com/evancz/elm-architecture-tutorial
 [rxjs-issue]: https://github.com/Reactive-Extensions/RxJS/issues/992
