@@ -16,6 +16,21 @@ The Elm archirecture is a very power functional programming pattern for building
 
 ## To Do
 
+react declarative tree:
+{
+  type: 'div',
+  props: {
+
+  }
+  children: [{
+    type: 'span'
+    props: {}
+
+  }]
+}
+
+
+
 - GraphQL
   - create schema without "this" or "new"
     - https://github.com/devknoll/graphql-schema
@@ -28,6 +43,27 @@ The Elm archirecture is a very power functional programming pattern for building
     - latency compensation
     - reactivity
   - backend? database? websockets?
+
+- github explorer project
+  - isomorphic
+  - graphql
+  - oauth
+  - stateless and pure UI
+    - navvc
+    - tabvc
+    - splitvc
+    - search
+    - hotkeys
+    - routing
+    - animation
+  - time-travel
+  - generate tests
+  - save sequences
+
+- chatroom project
+  - custom auth or passport.io
+  - socket.io or elixir
+  - mongo or redis
 
 
 - theres a problem with star-list

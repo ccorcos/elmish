@@ -6,6 +6,7 @@ import sortBy  from 'ramda/src/sortBy'
 import prop    from 'ramda/src/prop'
 import reverse from 'ramda/src/reverse'
 import map     from 'ramda/src/map'
+import __      from 'ramda/src/__'
 import h       from 'react-hyperscript'
 
 import 'styles/star-list'
@@ -59,7 +60,7 @@ let effects = curry((dispatch, state) => {
                         )(state.stars) :
       console.warn("this should never happen"),
     http: !state.pending ? [] : [
-      github.stars(selected, {
+      github.stars(__, {
         onSuccess: (response) => {
           return dispatch({type: 'stars', stars: response.json})
         },

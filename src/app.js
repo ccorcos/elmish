@@ -21,7 +21,10 @@ const init = () => {
 const update = curry((state, action) => {
   switch (action.type) {
     case 'select_user':
-      return merge(state, {selected: action.id})
+      return merge(state, {
+        selected: action.id,
+        stars: StarList.init()
+      })
     case 'star_action':
       return merge(state, {
         stars: StarList.update(state.stars, action.action)
@@ -46,7 +49,7 @@ const effects = curry((dispatch, state) => {
   const stars = state.selected ? StarList.effects(starDispatch, state.stars) : emptyStarList
   const following = FollowingList.effects(followingDispatch, state.following, {
     selected: state.selected,
-    select: (id) => dispatch({type:'select_user', id})
+    select: (id) => (id !== state.selected ? dispatch({type:'select_user', id}) : null)
   })
 
   return {
@@ -54,7 +57,7 @@ const effects = curry((dispatch, state) => {
       sidebar: following.html,
       content: stars.html
     }),
-    http: concat(stars.http, following.http)
+    http: concat(stars.http.map((fragment) => fragment(state.selected)), following.http)
   }
 })
 
