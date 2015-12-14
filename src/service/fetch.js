@@ -1,8 +1,11 @@
+import flyd from 'flyd'
 import differenceWith from 'ramda/src/differenceWith'
-import find           from 'ramda/src/find'
-import propEq         from 'ramda/src/propEq'
-import omit           from 'ramda/src/omit'
+import find from 'ramda/src/find'
+import propEq from 'ramda/src/propEq'
+import omit from 'ramda/src/omit'
+import prop from 'ramda/src/prop'
 
+// window.fetch polyfill
 import 'whatwg-fetch'
 
 const sameKey = (a, b) => a.key === b.key
@@ -55,4 +58,6 @@ const fetch = (requests=[]) => {
   })
 }
 
-export default fetch
+const fetchListeber = (effect$) => flyd.on(fetch, flyd.map(prop('http'), effect$))
+
+export default fetchListeber

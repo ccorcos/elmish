@@ -3,4 +3,5 @@
 // import 'tutorial/3-counter-complete'
 // import 'tutorial/4-list-of-counters'
 // import 'tutorial/5-undoable'
-import 'tutorial/6-undoable-with-hotkeys'
+// import 'tutorial/6-undoable-with-hotkeys'
+import 'tutorial/7-giphy-http'

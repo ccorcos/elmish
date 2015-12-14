@@ -102,15 +102,16 @@ start(undoable(counter), [render, hotkeys])
 // effects object and perform whatever side-effects necessary.
 //
 // It is also important to understand why the hotkeys are specified in an array
-// as opposed to just a plain old object. Any servies that aren't going to be
+// as opposed to just a plain old object. Any services that aren't going to be
 // composed later on ought to be wrapped up in an array so they can be
-// concatenated. This way, in our listOf function, we can simply concatenate
+// concatenated. This way, in our high-order components, we can simply concatenate
 // all services other than the html service and we now have a generic listOf
-// component regardless of what services its children use. Try it out:
+// component regardless of what services its children use. Check out how the
+// more generic listOf function works:
 
 // start(undoable(listOf(counter)), [render, hotkeys])
 
-// and notice how this version is fundamentally different because an undo will
+// and notice how this version is fundamentally different because cmd z will
 // undo all counters at the same time.
 
 // start(listOf(undoable(counter)), [render, hotkeys])
