@@ -1,7 +1,42 @@
 
 ## To Do
 
-- github example
+
+- hacker news graphql/relay example with graphqlhub.com
+  https://medium.com/@clayallsopp/relay-101-building-a-hacker-news-client-bb8b2bdc76e6#.a7rwoalft
+
+- install aws dyanamodb locally and get it running with node express.
+
+- think about a chatroom schema and define one with graphql
+  https://learngraphql.com/
+
+  - think about more complicated schemas as well
+    - localized chat
+    - tinder
+    - uber
+
+  - what about titan and follower/following recommendation/search schemas
+    - instagram
+    - findashindig.com
+    - reddit
+
+  - how does reactivity work without db pub/sub?
+  - how does reactivity work with pub-sub?
+  http://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Streams.html
+
+- how does relay work
+  - how does relay do caching and latency compensation?
+  - can I extract that into pure functions?
+
+- how does authentication work?
+
+---
+
+- chatroom with graphql and websockets
+- meteor chatroom example
+- relative import paths?
+- chatroom with graphql and auth and aws
+
 - chatroom example
 - socket.io chatroom example
 - meteor example with the new module system
