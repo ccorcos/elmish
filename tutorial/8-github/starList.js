@@ -1,4 +1,11 @@
-import github  from 'src/github'
+// This component displays a list of repositories that some user has starred.
+// Notice that the http side-effect is returning a function (due to the __),
+// and not a proper "fetch" object. That's becuase this component is entirely
+// unconcerned with who's stars its displaying. This is very similar to a
+// concept in Relay and GraphQL called query fragments. We could just as
+// easily created passed the username to this component, I like this way more.
+
+import github  from 'tutorial/8-github/github'
 import curry   from 'ramda/src/curry'
 import merge   from 'ramda/src/merge'
 import pipe    from 'ramda/src/pipe'
@@ -9,14 +16,12 @@ import map     from 'ramda/src/map'
 import __      from 'ramda/src/__'
 import h       from 'react-hyperscript'
 
-import 'styles/star-list'
+import 'styles/starList'
 
-// init : () -> state
 const init = () => {
  return { stars: [], pending: true, error: false }
 }
 
-// update : (state, action) -> state
 const update = curry((state, action) => {
   switch (action.type) {
     case 'stars':
@@ -37,8 +42,7 @@ const update = curry((state, action) => {
   }
 })
 
-// effects : (dispatch, state) -> {html, http, ...}
-let effects = curry((dispatch, state) => {
+let declare = curry((dispatch, state) => {
 
   const item = (repo) => {
     return (
@@ -72,4 +76,4 @@ let effects = curry((dispatch, state) => {
   }
 })
 
-export default {init, effects, update}
+export default {init, declare, update}

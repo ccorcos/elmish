@@ -111,3 +111,34 @@ GraphQL has a basic declarative JSON tree as well:
 }
 
 GraphQL gets patched together by.... Relay, fragments...?
+
+
+
+# HMR
+
+
+
+// check if HMR is enabled
+if (module.hot) {
+  // accept update of dependency
+  module.hot.accept(["src/giphy", "src/debug"], () => {
+    // save the previous state of the application
+    const state = state$()
+    // stop all side-effects
+    handler.end(true)
+    // import the latest versions
+    let app = require('src/giphy').default
+    let debug = require('src/debug').default
+    // override init
+    const {effects, update} = debug(app)
+    const init = () => state
+    // mutate and restart side-effects
+    const result = start({init, effects, update})
+    effect$ = result.effect$
+    state$ = result.state$
+    handler = flyd.map(({html, http}) => {
+      render(html)
+      fetch(http)
+    }, effect$)
+  });
+}

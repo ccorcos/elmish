@@ -1,16 +1,17 @@
-import github from 'src/github'
+// This component displays a list of github users that "ccorcos" follows. Note
+// that ccorcos is hardcoded in this example.
+
+import github from 'tutorial/8-github/github'
 import curry  from 'ramda/src/curry'
 import merge  from 'ramda/src/merge'
 import h      from 'react-hyperscript'
 
-import 'styles/following-list'
+import 'styles/followingList'
 
-// init : () -> state
 const init = () => {
  return { following: [], pending: true, error: false}
 }
 
-// update : (state, action) -> state
 const update = curry((state, action) => {
   switch (action.type) {
     case 'following':
@@ -31,8 +32,7 @@ const update = curry((state, action) => {
   }
 })
 
-// effects : (dispatch, state) -> {html, http, ...}
-let effects = curry((dispatch, state, {selected, select}) => {
+let declare = curry((dispatch, state, {selected, select}) => {
   const item = (user) => {
     return (
       h('div.user' + (user.login === selected ? '.selected' : ''), {
@@ -63,4 +63,4 @@ let effects = curry((dispatch, state, {selected, select}) => {
   }
 })
 
-export default {init, effects, update}
+export default {init, declare, update}

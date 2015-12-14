@@ -1,3 +1,7 @@
+// This file is simply a wrapper around the Github API for the fetch service.
+//
+// https://developer.github.com/v3/
+
 import merge from 'ramda/src/merge'
 import curry from 'ramda/src/curry'
 
