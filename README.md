@@ -10,7 +10,7 @@ To get it running:
     node server.js
     open http://localhost:3000/
 
-Check out `entry.coffee` to select the example you want to run.
+Check out `entry.coffee` to select the example you want to run and work your way through the tutorial.
 
 The Elm archirecture is a very power functional programming pattern for building user interfaces with all kinds of perks. Views are pure funtions of the state of the program. This means you can render any view in any state. So you could create an app of every view in every state making it trivial to re-style your app. You can also record the actions and the state making it easy to implement undo/redo, invalidate latency compensation action, and debug production errors.
 
