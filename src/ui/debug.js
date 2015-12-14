@@ -1,14 +1,19 @@
-import assoc  from 'ramda/src/assoc'
-import curry  from 'ramda/src/curry'
-import merge  from 'ramda/src/merge'
+import h from 'react-hyperscript'
+import assoc from 'ramda/src/assoc'
+import curry from 'ramda/src/curry'
+import merge from 'ramda/src/merge'
 import evolve from 'ramda/src/evolve'
 import append from 'ramda/src/append'
-import inc    from 'ramda/src/inc'
-import pipe   from 'ramda/src/pipe'
-import h      from 'react-hyperscript'
+import inc from 'ramda/src/inc'
+import omit from 'ramda/src/omit'
+import concat from 'ramda/src/concat'
+import mergeWith from 'src/utils/mergeWith'
+
+const concatObjValues = mergeWith(concat)
 
 import 'styles/debug.styl'
 
+// could have used the react-svg-loader instead ;)
 const svgs = {
   pause:
     h('svg', {viewBox: "0 0 30 30"},
@@ -72,14 +77,14 @@ const debug = (app) => {
 
   const toChildAction = (action) => {return {type: 'child', action}}
 
-  const effects = curry((dispatch, state) => {
+  const declare = curry((dispatch, state) => {
     const toggle = (state.live ? 'pause' : 'play')
-    const childDispatch = (state.live ? pipe(toChildAction, dispatch) : () => {})
-    const fx = app.effects(childDispatch, state.states[state.time])
+    const childDispatch = (state.live ? (action) => dispatch({type: 'child', action}) : () => {})
+    const effects = app.declare(childDispatch, state.states[state.time])
 
     const html =
       h('div.debug', [
-        h('div.app', {}, fx.html),
+        h('div.app', {}, effects.html),
         h('div.panel' + (state.hidden ? '.hidden' : ''), [
           button(toggle, {
             onClick: () => dispatch({type: toggle})
@@ -95,21 +100,18 @@ const debug = (app) => {
         ])
       ])
 
-    const hotkeys = {
+    const hotkeys = [{
       'control d': () => dispatch({type: 'toggle'})
-    }
+    }]
 
     if (state.live) {
-      return pipe(
-        assoc('html', html),
-        assoc('hotkeys', merge(hotkeys, fx.hotkeys || {}))
-      )(fx)
+      return concatObjValues({html, hotkeys}, omit(['html'], effects))
     } else {
       return {html, hotkeys}
     }
   })
 
-  return {init, effects, update}
+  return {init, declare, update}
 }
 
 export default debug

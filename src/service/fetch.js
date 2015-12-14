@@ -58,6 +58,6 @@ const fetch = (requests=[]) => {
   })
 }
 
-const fetchListeber = (effect$) => flyd.on(fetch, flyd.map(prop('http'), effect$))
+const fetchListener = (effect$) => flyd.on(fetch, flyd.map(prop('http'), effect$))
 
-export default fetchListeber
+export default fetchListener

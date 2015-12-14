@@ -8,6 +8,8 @@
 import start from 'src/elmish'
 import render from 'src/service/react'
 import fetch from 'src/service/fetch'
+import hotkeys from 'src/service/hotkeys'
+import debug from 'src/ui/debug'
 
 import curry from 'ramda/src/curry'
 import merge from 'ramda/src/merge'
@@ -96,14 +98,54 @@ let declare = curry((dispatch, state) => {
   }
 })
 
-// - declarative
-// - very similar to react by bindgin actions to event hooks
-// - we're using an es6 window.fetch polyfill service
-// - the service works like this... url, key, rest...
-// - if we havent gotten a response back, then we still need this data. thus
-//   its very different from how redux works with the thunk and allows us to
-//   do more powerful abstractions like graphql/relay and time travel.
-
-
 const app = {init, declare, update}
-start(app, [render, fetch])
+
+// A few things to notice here:
+// Rather than return a Promise or a Future or some other side-effect, we're
+// return a declarative data structure that says what we want. Not that if
+// other user interface actions were going one while the the HTTP request is
+// in flight, we still return an object saying, "hey, I still need this.".
+//
+// Just like React does virtual DOM diffing to do the minimum amount of DOM
+// mutation, the fetch service diffs the requests with any requests that are
+// currently in-flight so we're not sending multiple requests when we don't
+// need to. We perform this diff based on the key property of the http request
+// object.
+//
+// The fetch service is based on the ES6 window.fetch API. The url property
+// becomes the first argument to window.fetch and all other properties other
+// than key, onSuccess, and onError are passed as the second argument to
+// window.fetch.
+//
+// https://github.com/github/fetch
+//
+// Anyways, try it out:
+
+// start(app, [render, fetch])
+
+// The power we gain from declaratively data fetching is the same as we gained
+// from using a virtual DOM like React. We no longer have to worry about all
+// the imperative side-effects going on and gain more control over our
+// application.
+//
+// One particlarly powerful demonstration of this is time-travel. When you're
+// application spawns side-effects from within the lifecycle of the component
+// you end up spamming your external services when you do time-travel (like
+// with Redux and the thunk middleware) and if you block those side-effects,
+// then you cannot gracefully recover when you press play from the state of a
+// pending request.
+//
+// Check out this example with the time-travelling debugger. Use `ctrl d` to
+// toggle the debug panel. And try pressing play from a state where the request
+// is pending. Now hopefully you can really appreciate the abstraction power
+// we have harnessed by diligently writing pure, side-effect free code. :)
+
+start(debug(app), [render, fetch, hotkeys])
+
+// A couple things to note about using the debugger with this example:
+// - Chrome will not cache the images if you have the Dev Tools open, so the
+// images will have to reload as you slide. But close the Dev Tools and it
+// will work more like you expect.
+// - Giphy will return a random gif every time you send a request, so when you
+// press play from a pending state, you'll likely get a different gif from
+// before. Another way to say this is the random giphy API is not idempotent.
