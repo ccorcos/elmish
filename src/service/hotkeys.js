@@ -12,6 +12,13 @@ import append from 'ramda/src/append'
 import filter from 'ramda/src/filter'
 import equals from 'ramda/src/equals'
 import prop from 'ramda/src/prop'
+import difference from 'ramda/src/difference'
+import intersection from 'ramda/src/intersection'
+import merge from 'ramda/src/merge'
+import pick from 'ramda/src/pick'
+import map from 'ramda/src/map'
+import reduce from 'ramda/src/reduce'
+import fromPairs from 'ramda/src/fromPairs'
 
 const keymap = {
   8: 'backspace',
@@ -81,11 +88,11 @@ const isInput = (e) => {
   return  element.tagName === 'INPUT' || element.tagName === 'SELECT' || element.tagName === 'TEXTAREA' || element.isContentEditable
 }
 
-const currentHotKey = () => {
+const currentHotkey = () => {
   return keys.sort().join(' ')
 }
 
-const translateHotKeyStr= (str) => {
+const translateHotkeyStr= (str) => {
   return str.split(' ')
     .map((k) => aliases[k] || k)
     .sort()
@@ -95,20 +102,37 @@ const translateHotKeyStr= (str) => {
 const translateHotkeyListeners = (obj) => {
   let l = {}
   Object.keys(obj).map((k) => {
-    l[translateHotKeyStr(k)] = obj[k]
+    l[translateHotkeyStr(k)] = obj[k]
   })
   return l
 }
 
-const setListeners = (l={}) => {
-  listeners = translateHotkeyListeners(l)
+const mergeHotkeys = (a, b) => {
+  const aKeys = Object.keys(a)
+  const bKeys = Object.keys(b)
+  const uniqHotkeys = merge(
+    pick(difference(aKeys, bKeys), a),
+    pick(difference(bKeys, aKeys), b)
+  )
+  const sameKeys = intersection(aKeys, bKeys)
+  const joinKeysAsPairs = (key) => [key, () => { a[key](); b[key]() }]
+  const sameHotkeys = fromPairs(map(joinKeysAsPairs, sameKeys))
+  return merge(uniqHotkeys, sameHotkeys)
+}
+
+const mergeAllHotkeys = (list) => {
+  return reduce(mergeHotkeys, {}, list)
+}
+
+const setListeners = (l=[]) => {
+  listeners = mergeAllHotkeys(map(translateHotkeyListeners, l))
 }
 
 document.addEventListener('keydown', (e) => {
   if (isInput(e)) { return }
   const key = lookupEventKey(e)
   addKey(key)
-  const hotkey = currentHotKey()
+  const hotkey = currentHotkey()
   const callback = listeners[hotkey]
   if (callback) {
     e.preventDefault()
@@ -126,6 +150,6 @@ document.addEventListener('keyup', (e) => {
   removeKey(key)
 })
 
-const hotKeyListener = (effect$) => flyd.on(setListeners, flyd.map(prop('hotkeys'), effect$))
+const hotkeyListener = (effect$) => flyd.on(setListeners, flyd.map(prop('hotkeys'), effect$))
 
-export default hotKeyListener
+export default hotkeyListener

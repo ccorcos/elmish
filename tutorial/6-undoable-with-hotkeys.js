@@ -21,6 +21,7 @@ import inc from 'ramda/src/inc'
 import concat from 'ramda/src/concat'
 import take from 'ramda/src/take'
 import merge from 'ramda/src/merge'
+import listOf from 'src/ui/listOf'
 
 // We're going to import the hotkeys service. This service takes a declarative
 // object of key value pairs where the key is a string describing the hotkey
@@ -81,60 +82,35 @@ const undoable = (kind) => {
       // the hotkeys we want to listen to and what we want them to do. The
       // hotkey service will take care of all mutations and adding/removing
       // event listeners, etc.
-      hotkeys: {
+      hotkeys: [{
         'cmd z': () => canUndo ? dispatch({type: 'undo'}) : null,
         'cmd y': () => canRedo ? dispatch({type: 'redo'}) : null
-      }
+      }]
     }
   })
 
   return {init, update, declare}
-
 }
 
 // Now we need to make sure we add hotkeys as another service
 start(undoable(counter), [render, hotkeys])
 
-/*
-Lets review how this works in a little more detail. `declare` returns an
-object of declarative datastructures with bound callbacks for async actions.
-When we map over the the state$ to get the effects$, we call each service
-with the effects$. The service will the read a specific property of the
-effects object and perform whatever side-effects necessary.
+// Lets review how this works in a little more detail. `declare` returns an
+// object of declarative data-structures with bound callbacks for async actions.
+// When we map over the the state$ to get the effects$, we call each service
+// with the effects$. The service will the read a specific property of the
+// effects object and perform whatever side-effects necessary.
+//
+// It is also important to understand why the hotkeys are specified in an array
+// as opposed to just a plain old object. Any servies that aren't going to be
+// composed later on ought to be wrapped up in an array so they can be
+// concatenated. This way, in our listOf function, we can simply concatenate
+// all services other than the html service and we now have a generic listOf
+// component regardless of what services its children use. Try it out:
 
-TODO: One challenge I've yet to completely solve is how to deal with
-services in a generic way with regards to abstraction. For example, suppose
-we want to make a list of this type of undoable counter. In the listOf
-component, we'll need to come up with some way concatenating the hotkeys
-requirements of each subcomponent. There are a variety of ways we could
-implement this but here's one solution:
+// start(undoable(listOf(counter)), [render, hotkeys])
 
-import difference from 'ramda/src/difference'
-import intersection from 'ramda/src/intersection'
-import merge from 'ramda/src/merge'
-import pick from 'ramda/src/pick'
-import keys from 'ramda/src/keys'
-import map from 'ramda/src/map'
-import fromPairs from 'ramda/src/fromPairs'
-const mergeHotkeys = (a, b) => {
-  const aKeys = keys(a)
-  const bKeys = keys(b)
-  const uniqHotKeys = merge(
-    pick(difference(aKeys, bKeys), a),
-    pick(difference(bKeys, aKeys), b)
-  )
-  const sameKeys = intersection(aKeys, bKeys)
-  const joinKeysAsPairs = (key) => [key, () => { a[key](); b[key]() }]
-  const sameHotKeys = fromPairs(map(joinKeysAsPairs, sameKeys))
-  return merge(uniqHotKeys, sameHotKeys)
-}
+// and notice how this version is fundamentally different because an undo will
+// undo all counters at the same time.
 
-This works satisfactorily but the only issue is that now our listOf component
-needs to be service-aware. That is, if I want to create a new service, then I'll
-need to add another line to my listOf component to merge those service
-declarations if they're there. Thus, I think a more generic way of doing this
-if making service declarations a monadic type that has a prototype .merge
-function for combining arbitrary services that high-order components like the
-listOf component aren't concerned with.
-
-*/
+// start(listOf(undoable(counter)), [render, hotkeys])

@@ -16,7 +16,6 @@ The Elm archirecture is a very power functional programming pattern for building
 
 ## To Do
 
-- monadic service types
 - move on to giphy example
 - debug example
 
