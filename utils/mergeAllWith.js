@@ -1,4 +1,4 @@
-import mergeWith from 'src/utils/mergeWith'
+import mergeWith from 'elmish/utils/mergeWith'
 import curry from 'ramda/src/curry'
 import reduce from 'ramda/src/reduce'
 

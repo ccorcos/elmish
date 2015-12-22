@@ -3,9 +3,11 @@
 // component to make a list of components.
 
 import h from 'react-hyperscript'
-import start from 'src/elmish'
-import render from 'src/service/react'
-import counter from 'lib/counter'
+
+import start from 'elmish'
+import render from 'elmish/services/react'
+import counter from 'elmish/tutorial/4/counter'
+
 import curry from 'ramda/src/curry'
 import evolve from 'ramda/src/evolve'
 import filter from 'ramda/src/filter'

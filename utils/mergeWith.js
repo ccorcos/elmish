@@ -4,7 +4,7 @@ import merge from 'ramda/src/merge'
 import keys from 'ramda/src/keys'
 import map from 'ramda/src/map'
 import fromPairs from 'ramda/src/fromPairs'
-import vennDiagram from 'src/utils/vennDiagram'
+import vennDiagram from 'elmish/utils/vennDiagram'
 
 const mergeWith = curry((fn, a, b) => {
   const [aKeys, bothKeys, bKeys] = vennDiagram(keys(a), keys(b))

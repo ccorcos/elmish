@@ -1,12 +1,12 @@
 // This component displays a list of github users that "ccorcos" follows. Note
 // that ccorcos is hardcoded in this example.
 
-import github from 'tutorial/8-github/github'
+import github from 'elmish/tutorial/8/github'
 import curry  from 'ramda/src/curry'
 import merge  from 'ramda/src/merge'
 import h      from 'react-hyperscript'
 
-import 'styles/followingList'
+import 'elmish/tutorial/8/styles/followingList.styl'
 
 const init = () => {
  return { following: [], pending: true, error: false}

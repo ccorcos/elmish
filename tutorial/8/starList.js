@@ -5,7 +5,7 @@
 // concept in Relay and GraphQL called query fragments. We could just as
 // easily created passed the username to this component, I like this way more.
 
-import github  from 'tutorial/8-github/github'
+import github  from 'elmish/tutorial/8/github'
 import curry   from 'ramda/src/curry'
 import merge   from 'ramda/src/merge'
 import pipe    from 'ramda/src/pipe'
@@ -16,7 +16,7 @@ import map     from 'ramda/src/map'
 import __      from 'ramda/src/__'
 import h       from 'react-hyperscript'
 
-import 'styles/starList'
+import 'elmish/tutorial/8/styles/starList.styl'
 
 const init = () => {
  return { stars: [], pending: true, error: false }

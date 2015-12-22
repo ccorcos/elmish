@@ -11,9 +11,6 @@
 
 // pretty much everything is the same as before except a few things:
 import h from 'react-hyperscript'
-import start from 'src/elmish'
-import render from 'src/service/react'
-import counter from 'lib/counter'
 import curry from 'ramda/src/curry'
 import evolve from 'ramda/src/evolve'
 import dec from 'ramda/src/dec'
@@ -21,12 +18,16 @@ import inc from 'ramda/src/inc'
 import concat from 'ramda/src/concat'
 import take from 'ramda/src/take'
 import merge from 'ramda/src/merge'
-import listOf from 'src/ui/listOf'
+
+import start from 'elmish'
+import render from 'elmish/services/react'
+import listOf from 'elmish/ui/listOf'
+import counter from 'elmish/tutorial/4/counter'
 
 // We're going to import the hotkeys service. This service takes a declarative
 // object of key value pairs where the key is a string describing the hotkey
 // combination and the value is a callback.
-import hotkeys from 'src/service/hotkeys'
+import hotkeys from 'elmish/services/hotkeys'
 
 const undoable = (kind) => {
 

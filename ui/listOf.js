@@ -12,9 +12,9 @@ import adjust from 'ramda/src/adjust'
 import __ from 'ramda/src/__'
 import map from 'ramda/src/map'
 import keys from 'ramda/src/keys'
-import mergeAllWith from 'src/utils/mergeAllWith'
 import concat from 'ramda/src/concat'
 import omit from 'ramda/src/omit'
+import mergeAllWith from 'elmish/utils/mergeAllWith'
 
 const propNeq = complement(propEq)
 const concatObjValues = mergeAllWith(concat)

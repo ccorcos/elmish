@@ -1,8 +1,7 @@
 
 ## To Do
 
-- structure the package with a symlink to node_modules for imports
-- restructure the tutorial into shallow and deep
+
 - outline the goals of elmish
 - graphql hacker news
 - github with a caching layer

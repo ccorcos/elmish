@@ -3,9 +3,6 @@
 // states in a list.
 
 import h from 'react-hyperscript'
-import start from 'src/elmish'
-import render from 'src/service/react'
-import counter from 'lib/counter'
 import curry from 'ramda/src/curry'
 import evolve from 'ramda/src/evolve'
 import dec from 'ramda/src/dec'
@@ -13,6 +10,10 @@ import inc from 'ramda/src/inc'
 import concat from 'ramda/src/concat'
 import take from 'ramda/src/take'
 import merge from 'ramda/src/merge'
+
+import start from 'elmish'
+import render from 'elmish/services/react'
+import counter from 'elmish/tutorial/4/counter'
 
 const undoable = (kind) => {
 

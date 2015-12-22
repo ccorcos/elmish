@@ -7,7 +7,7 @@ import append from 'ramda/src/append'
 import inc from 'ramda/src/inc'
 import omit from 'ramda/src/omit'
 import concat from 'ramda/src/concat'
-import mergeWith from 'src/utils/mergeWith'
+import mergeWith from 'elmish/utils/mergeWith'
 
 const concatObjValues = mergeWith(concat)
 

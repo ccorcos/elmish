@@ -2,9 +2,9 @@
 // to tackle some more challenging problems.
 
 // I'm putting the the main logic in elmish
-import start from 'src/elmish'
+import start from 'elmish'
 // React is a "service" that handles nasty mutations and side-effects
-import render from 'src/service/react'
+import render from 'elmish/services/react'
 // Ramda is a great functional toolbelt library, similar to underscore or
 // lodash. Curry will "auto-curry" your function. It looks at function.length
 // and returns a new function if not all the arguments are there, otherwise
