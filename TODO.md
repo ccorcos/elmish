@@ -1,19 +1,40 @@
 
 ## To Do
 
+- more modular webpack config?
+- graphql cache
+- simple http cache
+- websocket chatroom
+  - how does time-travel work here? the database should just give a timestamp. using datomic, this means its trivial! :)
+  - caching is trivial with datomic as well! 
+
 - outline the goals of elmish
+  
   - abstraction
-  - purity
-  - state should be serializable
+    
+    it should be trivial to duplicate create N instances of your app side-by-side without iFrames (listOf) without changing the existing component's code.
+  
+  - pure and stateless ui
+
+    the UI should be a pure function of state. there should be no side-effects of rendering the UI. all side-effects should be declared and parsed.
+    
+  - states and actions should be serializable
+
+    all states and actions should be serializable so they can trivially be tracked and send to the server. 
+
   - time travel
 
-- graphql hacker news
-- github with a caching layer
-- simple chatroom
+    the app should be trivially recordable and rewindable
+
+
 - awesome responsive splitview
 - routing
 - meteor
 - performance, lazy evaluation without instantiating objects?
+
+- how to automatically wire up -- less boilerplate
+- how to implement caching well
+- how to implement laziness
 
 - github http caching layer
 - graphql + hacker news, but no relay.
@@ -205,3 +226,41 @@ if (module.hot) {
     }, effect$)
   });
 }
+
+
+window.fetch('http://www.graphqlhub.com/graphql', {
+  method: 'post',
+  headers: {
+    'Content-Type': 'application/graphql'
+  },
+  body: '{ graphQLHub hn { topStories(limit: 1) { title url timeISO by { id } kids(limit: 10) { timeISO by { id } text } } } }'
+}).then(console.log.bind(console))
+
+import h       from 'react-hyperscript'
+import curry   from 'ramda/src/curry'
+import merge   from 'ramda/src/merge'
+
+const init = () => {
+ return { }
+}
+
+const update = curry((state, action) => {
+  switch (action.type) {
+    case 'something': 
+      return merge(state, {
+
+      })
+    default:
+      return state
+  }
+})
+
+const declare = curry((dispatch, state) => {
+
+  return {
+    html:
+      h('div.app')
+  }
+})
+
+export default {init, declare, update}
