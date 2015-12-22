@@ -57,7 +57,7 @@ const root = document.getElementById('root')
 // now we just need to connect the pieces.
 let state = app.init()
 // when we get an action, we want to update the state and re-render the ui
-const dispatch = action => {
+const dispatch = (action) => {
   state = app.update(state, action)
   ReactDOM.render(app.view(dispatch, state), root)
 }
