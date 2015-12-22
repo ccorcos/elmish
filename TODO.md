@@ -1,9 +1,34 @@
 
 ## To Do
 
+- structure the package with a symlink to node_modules for imports
+- restructure the tutorial into shallow and deep
+- outline the goals of elmish
+- graphql hacker news
+- github with a caching layer
+- simple chatroom
+- awesome responsive splitview
+- routing
+- meteor
+- performance, lazy evaluation without instantiating objects?
+
+- github http caching layer
+- graphql + hacker news, but no relay.
+- try to implement some basic caching with graphql
+- performance - wrap in a React class for lazy evaluation
+- chatroom example with dynamodb
+  - pub-sub?
+  - fatquery
+  - latency compensation
 
 - hacker news graphql/relay example with graphqlhub.com
   https://medium.com/@clayallsopp/relay-101-building-a-hacker-news-client-bb8b2bdc76e6#.a7rwoalft
+
+  - just use graphql and function composition
+  - then think about caching, mutations, fat queries, etc.
+
+- performance
+  - lazily evaluation by wrapping in a react component with shouldComponentUpdate and pass it all the way through.
 
 - install aws dyanamodb locally and get it running with node express.
 
