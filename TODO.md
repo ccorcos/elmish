@@ -1,8 +1,12 @@
 
 ## To Do
 
-
 - outline the goals of elmish
+  - abstraction
+  - purity
+  - state should be serializable
+  - time travel
+
 - graphql hacker news
 - github with a caching layer
 - simple chatroom

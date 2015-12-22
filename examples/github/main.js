@@ -5,6 +5,6 @@ import fetch from 'elmish/services/fetch'
 import hotkeys from 'elmish/services/hotkeys'
 import debug from 'elmish/ui/debug'
 
-import app from 'elmish/tutorial/8/app'
+import app from 'elmish/examples/github/app'
 
 start(debug(app), [render, fetch, hotkeys])

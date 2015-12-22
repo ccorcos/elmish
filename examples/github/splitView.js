@@ -4,7 +4,7 @@
 
 import h from 'react-hyperscript'
 
-import 'elmish/tutorial/8/styles/splitView.styl'
+import 'elmish/examples/github/styles/splitView.styl'
 
 export default ({sidebar, content}) => {
   return (

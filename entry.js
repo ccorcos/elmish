@@ -5,4 +5,5 @@
 // import 'elmish/tutorial/5/main.js'
 // import 'elmish/tutorial/6/main.js'
 // import 'elmish/tutorial/7/main.js'
-import 'elmish/tutorial/8/main.js'
+import 'elmish/examples/github/main.js'
+

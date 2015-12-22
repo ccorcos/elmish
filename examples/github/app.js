@@ -5,11 +5,11 @@ import map from 'ramda/src/map'
 import concat from 'ramda/src/concat'
 import h from 'react-hyperscript'
 
-import SplitView from 'elmish/tutorial/8/splitView'
-import FollowingList from 'elmish/tutorial/8/followingList'
-import StarList from 'elmish/tutorial/8/starList'
+import SplitView from 'elmish/examples/github/splitView'
+import FollowingList from 'elmish/examples/github/followingList'
+import StarList from 'elmish/examples/github/starList'
 
-import 'elmish/tutorial/8/styles/app.styl'
+import 'elmish/examples/github/styles/app.styl'
 
 const init = () => {
   return {
