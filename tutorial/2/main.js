@@ -54,7 +54,7 @@ const state$ = flyd.scan(app.update, app.init(), action$)
 // Now we have a stream of states. On every new state, we'll get the virtual
 // DOM tree from the app.view function. Any async calls to dispatch will
 // be routed back to the action stream.
-const html$ = flyd.map(view(action$), state$)
+const html$ = flyd.map(app.view(action$), state$)
 // Then we pipe the virtual DOM stream to ReactDOM.render.
 const render = html => ReactDOM.render(html, root)
 flyd.on(render, html$)

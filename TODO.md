@@ -134,20 +134,12 @@
 
 
 - time-travel import/export/save sequences
-
-- meteor http side-effect
-- meteor subscribe side-effect
-- socket.io subscribe side-effect
-- phoenix subscribe side-effect
-
 - json-diff-patch stateless chatroom example
 
-- elixir composable queries?
 
-- responsive split-view component
-- animation state
-- user auth
-- routing
+
+
+
 
 ## Notes
 
@@ -184,9 +176,6 @@ GraphQL has a basic declarative JSON tree as well:
           },
           fields: {
             count: {},
-            edges: {
-              ?? https://github.com/ooflorent/babel-plugin-graphql
-            }
           }
         }
       }
@@ -194,13 +183,9 @@ GraphQL has a basic declarative JSON tree as well:
   }
 }
 
-GraphQL gets patched together by.... Relay, fragments...?
-
 
 
 # HMR
-
-
 
 // check if HMR is enabled
 if (module.hot) {
@@ -228,13 +213,7 @@ if (module.hot) {
 }
 
 
-window.fetch('http://www.graphqlhub.com/graphql', {
-  method: 'post',
-  headers: {
-    'Content-Type': 'application/graphql'
-  },
-  body: '{ graphQLHub hn { topStories(limit: 1) { title url timeISO by { id } kids(limit: 10) { timeISO by { id } text } } } }'
-}).then(console.log.bind(console))
+# Boilerplate
 
 import h       from 'react-hyperscript'
 import curry   from 'ramda/src/curry'
