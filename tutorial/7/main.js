@@ -1,6 +1,6 @@
 // In this example, I'll demonstrate how to perform HTTP requests as declarative
 // side-effects and also some webpack features that allow us to make very
-// generalizable components.
+// reusable components.
 //
 // In this example, we'll fetch a random gif and display it. We'll also have
 // a button to fetch another random gif.
@@ -16,7 +16,7 @@ import merge from 'ramda/src/merge'
 import h     from 'react-hyperscript'
 
 // Webpack has "loader" feature which allows you to require static assets within
-// your Javascript so they're be bundled up at compile-time. This allows you
+// your JavaScript so they're be bundled up at compile-time. This allows you
 // to do all kinds of amazing things. For now, we'll use it to require a loading
 // gif and an error gif.
 const loadingGif = require('elmish/tutorial/7/loading.gif')
@@ -24,7 +24,7 @@ const errorGif = require("elmish/tutorial/7/error.gif")
 
 // We'll also use stylus to import some styles specific to this component. This
 // allows us to build really reusable components because their styles can be
-// required from javascript. This is likely going to change the way you think
+// required from JavaScript. This is likely going to change the way you think
 // about writing your Stylus/SCSS files because you're no longer assuming some
 // global scope and importing all your files into one. The only files you should
 // be importing in are files with parameter configurations and mixins that don't
@@ -35,8 +35,8 @@ require('elmish/tutorial/7/giphy.styl')
 const randomUrl = (topic) =>
   `http://api.giphy.com/v1/gifs/random?api_key=dc6zaTOxFJmzC&&rating=pg&tag=${topic}`
 
-// Each HTTP request needs a unique id and we'll use this function to generate
-// unique random ids.
+// Each HTTP request needs a unique id so we can quickly diff them. This is analogous
+// to the key property for React components in a list.
 const randomId = () =>
   Math.round(Math.random()*Math.pow(10, 10)).toString()
 
@@ -52,17 +52,20 @@ const init = (topic="explosions") => {
 const update = curry((state, action) => {
   switch (action.type) {
     case 'newGif':
+      // the http success response
       return merge(state, {
         url: action.url,
         pending: false
       })
     case 'errorGif':
+      // the http error response
       console.warn("ERROR:", state, action)
       return merge(state, {
         url: errorGif,
         pending: false
       })
     case 'anotherGif':
+      // request a new gif
       return merge(state, {
         url: loadingGif,
         key: randomId(),
@@ -73,7 +76,7 @@ const update = curry((state, action) => {
   }
 })
 
-let declare = curry((dispatch, state) => {
+const declare = curry((dispatch, state) => {
   return {
     html:
       h('div.giphy', [
@@ -102,7 +105,7 @@ const app = {init, declare, update}
 
 // A few things to notice here:
 // Rather than return a Promise or a Future or some other side-effect, we're
-// return a declarative data structure that says what we want. Not that if
+// return a declarative data structure that says what we want. Note that if
 // other user interface actions were going one while the the HTTP request is
 // in flight, we still return an object saying, "hey, I still need this.".
 //

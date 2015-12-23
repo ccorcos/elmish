@@ -1,144 +1,40 @@
+## To Do (Fun)
 
-## To Do
+- routing service
+- meteor service
 
-- more modular webpack config?
-- graphql cache
-- simple http cache
-- websocket chatroom
-  - how does time-travel work here? the database should just give a timestamp. using datomic, this means its trivial! :)
-  - caching is trivial with datomic as well! 
+- additive animations
+- CSS in JS https://speakerdeck.com/vjeux/react-css-in-js
 
-- outline the goals of elmish
-  
-  - abstraction
-    
-    it should be trivial to duplicate create N instances of your app side-by-side without iFrames (listOf) without changing the existing component's code.
-  
-  - pure and stateless ui
+- ui components
+  - responsive splitvc
+  - navvc
+  - tabvc
 
-    the UI should be a pure function of state. there should be no side-effects of rendering the UI. all side-effects should be declared and parsed.
-    
-  - states and actions should be serializable
-
-    all states and actions should be serializable so they can trivially be tracked and send to the server. 
-
-  - time travel
-
-    the app should be trivially recordable and rewindable
-
-
-- awesome responsive splitview
-- routing
-- meteor
-- performance, lazy evaluation without instantiating objects?
-
-- how to automatically wire up -- less boilerplate
-- how to implement caching well
-- how to implement laziness
-
-- github http caching layer
-- graphql + hacker news, but no relay.
-- try to implement some basic caching with graphql
-- performance - wrap in a React class for lazy evaluation
-- chatroom example with dynamodb
-  - pub-sub?
-  - fatquery
-  - latency compensation
-
-- hacker news graphql/relay example with graphqlhub.com
-  https://medium.com/@clayallsopp/relay-101-building-a-hacker-news-client-bb8b2bdc76e6#.a7rwoalft
-
-  - just use graphql and function composition
-  - then think about caching, mutations, fat queries, etc.
-
-- performance
-  - lazily evaluation by wrapping in a react component with shouldComponentUpdate and pass it all the way through.
-
-- install aws dyanamodb locally and get it running with node express.
-
-- think about a chatroom schema and define one with graphql
-  https://learngraphql.com/
-
-  - think about more complicated schemas as well
-    - localized chat
-    - tinder
-    - uber
-
-  - what about titan and follower/following recommendation/search schemas
-    - instagram
-    - findashindig.com
-    - reddit
-
-  - how does reactivity work without db pub/sub?
-  - how does reactivity work with pub-sub?
-  http://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Streams.html
-
-- how does relay work
-  - how does relay do caching and latency compensation?
-  - can I extract that into pure functions?
-
-- how does authentication work?
-
----
-
-- chatroom with graphql and websockets
-- meteor chatroom example
-- relative import paths?
-- chatroom with graphql and auth and aws
-
-- chatroom example
-- socket.io chatroom example
-- meteor example with the new module system
-
-- laziness (?) and immutability
-- immutable.js and functionize
-
-- oauth service
-- passport.io service?
-- chatroom with graphql
-
-
-- GraphQL
-  - create schema without "this" or "new"
-    - https://github.com/devknoll/graphql-schema
-    - https://github.com/matthewmueller/graph.ql
-  - use JSON query instead of stings
-    - https://github.com/ooflorent/babel-plugin-graphql
-  - client cache?
-    - read cache sync and rest async?
-  - mutations
-    - latency compensation
-    - reactivity
-  - backend? database? websockets?
-
-- github explorer project
-  - isomorphic
-  - graphql
-  - oauth
-  - stateless and pure UI
-    - navvc
-    - tabvc
-    - splitvc
-    - search
-    - hotkeys
-    - routing
-    - animation
-  - time-travel
-  - generate tests
-  - save sequences
-
-- chatroom project
-  - custom auth or passport.io
-  - socket.io or elixir
-  - mongo or redis
-
-
-- time-travel import/export/save sequences
 - json-diff-patch stateless chatroom example
 
+## To Do (Not Fun)
 
+- http caching
+- graphql caching
+- performance and memoization
+- latency compensation
+- auth service?
+- immutable with functionize
+- send errors on exceptions
+- record, save, replay
+- generative testing
+- predictive testing
 
+## Extras
 
+- demo apps
+  - chatroom
+  - localized chat
+  - tinder
+  - uber
+  - instagram
+  - reddit
 
 
 ## Notes

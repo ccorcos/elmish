@@ -85,7 +85,8 @@ const undoable = (kind) => {
       // event listeners, etc.
       hotkeys: [{
         'cmd z': () => canUndo ? dispatch({type: 'undo'}) : null,
-        'cmd y': () => canRedo ? dispatch({type: 'redo'}) : null
+        'cmd y': () => canRedo ? dispatch({type: 'redo'}) : null,
+        'cmd shift z': () => canRedo ? dispatch({type: 'redo'}) : null
       }]
     }
   })
@@ -105,14 +106,14 @@ start(undoable(counter), [render, hotkeys])
 // It is also important to understand why the hotkeys are specified in an array
 // as opposed to just a plain old object. Any services that aren't going to be
 // composed later on ought to be wrapped up in an array so they can be
-// concatenated. This way, in our high-order components, we can simply concatenate
-// all services other than the html service and we now have a generic listOf
+// concatenated. This way, in our higher-order components, we can simply concatenate
+// all services other than the HTML service and we now have a generic listOf
 // component regardless of what services its children use. Check out how the
 // more generic listOf function works:
 
 // start(undoable(listOf(counter)), [render, hotkeys])
 
-// and notice how this version is fundamentally different because cmd z will
+// and notice how this version is fundamentally different because `cmd z` will
 // undo all counters at the same time.
 
 // start(listOf(undoable(counter)), [render, hotkeys])

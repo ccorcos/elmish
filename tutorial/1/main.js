@@ -13,7 +13,7 @@ import ReactDOM from 'react-dom'
 // with the following type signatures:
 //
 // init : () => state
-// update : state => action => next state
+// update : state => action => state
 // view : dispatch => state => html
 
 // the initial state of the counter is 0

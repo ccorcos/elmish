@@ -1,5 +1,5 @@
 // In the next two examples, I want to demonstrate some of the abstraction
-// power in using this pattern. First, we're going to create a high-order
+// power in using this pattern. First, we're going to create a higher-order
 // component to make a list of components.
 
 import h from 'react-hyperscript'
@@ -30,7 +30,9 @@ const listOf = (kind) => {
   const update = curry((state, action) => {
     switch (action.type) {
       case 'insert':
-        // create a new child and add it to the list
+        // create a new child with a new id and add it to the list. kind is the kind
+        // of component you want a list of and it will have an init function to initialize
+        // its state just like any other component
         const item = {
           id: state.nextId,
           state: kind.init()
@@ -42,7 +44,7 @@ const listOf = (kind) => {
       case 'remove':
         // Here, I want to start introducing some more utility functions that
         // will make your code even more declarative and explicit. `evolve` is
-        // one of my favorite functions. :)
+        // one of my favorite functions which allows you to transform objects.
         //
         // http://ramdajs.com/docs/#evolve
         // http://ramdajs.com/docs/#filter

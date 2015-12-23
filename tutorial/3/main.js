@@ -68,8 +68,8 @@ const update = curry((state, action) => {
 //   }
 // }
 //
-// I prefer to use hyperscript instead of JSX because or JSON because its
-// concise and I don't like HTML. I also like how its compatible with
+// I prefer to use hyperscript instead of JSX because it's
+// concise and I don't like HTML. I also like how it's compatible with
 // virtual-dom and snabbdom which are worthy candidates to React if you aren't
 // interested in React Native.
 // https://github.com/mlmorg/react-hyperscript
@@ -98,7 +98,7 @@ const update = curry((state, action) => {
 // Rendering html is just one kind of side-effect. Other side-effects could be
 // HTTP requests, global event listeners, subscriptions, etc. All of these
 // side-effects must be specified with a declarative data structure.
-// Thus we'll call this  function `declare` to remind us that we're simply
+// Thus we'll call this function `declare` instead of `view` to remind us that we're simply
 // declaring what we want and letting some other service take care of
 // everything else.
 // declare : (dispatch, state) -> effects
@@ -117,5 +117,5 @@ const declare = curry((dispatch, state) => {
 
 const app = {init, update, declare}
 
-// start takes an app and a list of services and puts it all together.
+// start is imported from elmish and takes an app and a list of services and puts it all together.
 start(app, [render])
