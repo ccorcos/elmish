@@ -9,11 +9,11 @@
 import React from 'react'
 import ReactDOM from 'react-dom'
 
-// The timplest UI component consists of 3 pure, side-effect-free functions
+// The simplest UI component consists of 3 pure, side-effect-free functions
 // with the following type signatures:
 //
 // init : () => state
-// update : state => action => state
+// update : state => action => next state
 // view : dispatch => state => html
 
 // the initial state of the counter is 0
@@ -57,7 +57,7 @@ const root = document.getElementById('root')
 // now we just need to connect the pieces.
 let state = app.init()
 // when we get an action, we want to update the state and re-render the ui
-const dispatch = (action) => {
+const dispatch = action => {
   state = app.update(state, action)
   ReactDOM.render(app.view(dispatch, state), root)
 }

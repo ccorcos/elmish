@@ -42,10 +42,10 @@ const view = dispatch => state => {
 const app = {init, update, view}
 const root = document.getElementById('root')
 
-// We'll use streams to handle all the pumbing this time so we can code more
+// We'll use streams to handle all the plumbing this time so we can code more
 // declaratively. By convention, we'll denote streams by ending with $.
 // We'll start with a stream of actions.
-// flyd is a simple an elegant observable streams library:
+// flyd is a simple and elegant observable streams library:
 // https://github.com/paldepind/flyd
 const action$ = flyd.stream()
 // Whenever we get a new action, we'll run update with the previous state.
