@@ -85,7 +85,8 @@ const lookupEventKey = (e) =>  {
 
 const isInput = (e) => {
   const element = e.target || e.srcElement
-  return  element.tagName === 'INPUT' || element.tagName === 'SELECT' || element.tagName === 'TEXTAREA' || element.isContentEditable
+  if (element.className.indexOf('with-hotkeys') > -1) { return false }
+  return element.tagName === 'INPUT' || element.tagName === 'SELECT' || element.tagName === 'TEXTAREA' || element.isContentEditable
 }
 
 const currentHotkey = () => {

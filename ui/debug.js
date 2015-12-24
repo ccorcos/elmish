@@ -107,6 +107,7 @@ const debug = (app) => {
           }),
           h(`input`, {
             type: 'range',
+            className: 'with-hotkeys',
             min: 0,
             max: state.states.length - 1,
             value: state.time,
