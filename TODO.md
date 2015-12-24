@@ -137,3 +137,14 @@ const declare = curry((dispatch, state) => {
 })
 
 export default {init, declare, update}
+
+// https://github.com/KyleAMathews/typography.js
+
+// embrace the log. great talk.
+// https://www.youtube.com/watch?v=EOz4D_714R8
+
+// how does this work with data and caching etc? embrace the log.
+// log everything and the reducers just maintain intermediary state.
+// remember what he said about how kafka works. we can run through 
+// the logs and incrementally reduce them while also trimming the logs
+// so we only keep what matters.
