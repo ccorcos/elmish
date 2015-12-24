@@ -8,7 +8,7 @@ To get it running:
 git clone https://github.com/ccorcos/elmish.git
 cd elmish
 npm install
-ln -s . node_modules/elmish
+ln -s .. node_modules/elmish
 node server.js
 open http://localhost:3000/
 ```
