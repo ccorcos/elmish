@@ -7,7 +7,7 @@ import append from 'ramda/src/append'
 import inc from 'ramda/src/inc'
 import omit from 'ramda/src/omit'
 import concat from 'ramda/src/concat'
-import mergeWith from 'elmish/utils/mergeWith'
+import mergeWith from 'ramda/src/mergeWith'
 
 const concatObjValues = mergeWith(concat)
 
@@ -107,7 +107,7 @@ const debug = (app) => {
     if (state.live) {
       return concatObjValues({html, hotkeys}, omit(['html'], effects))
     } else {
-      return {html, hotkeys}
+      return {html, hotkeys, route: effects.route}
     }
   })
 

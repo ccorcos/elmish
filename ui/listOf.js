@@ -14,7 +14,12 @@ import map from 'ramda/src/map'
 import keys from 'ramda/src/keys'
 import concat from 'ramda/src/concat'
 import omit from 'ramda/src/omit'
-import mergeAllWith from 'elmish/utils/mergeAllWith'
+import mergeWith from 'ramda/src/mergeWith'
+import reduce from 'ramda/src/reduce'
+
+const mergeAllWith = curry((fn, list) => {
+  return reduce(mergeWith(fn), {}, list)
+})
 
 const propNeq = complement(propEq)
 const concatObjValues = mergeAllWith(concat)

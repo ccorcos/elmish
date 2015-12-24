@@ -7,7 +7,7 @@
   "dependencies": {
     "flyd": "^0.2.0",
     "immutable": "^3.7.5",
-    "ramda": "^0.18.0",
+    "ramda": "^0.19.0",
     "react": "^0.14.3",
     "react-dom": "^0.14.3",
     "react-hyperscript": "^2.2.1",

@@ -1,17 +1,15 @@
 ## To Do (Fun)
 
-- routing service
-- meteor service
-
 - additive animations
 - CSS in JS https://speakerdeck.com/vjeux/react-css-in-js
 
-- ui components
+- ui components (with routing examples!)
   - responsive splitvc
   - navvc
   - tabvc
 
 - json-diff-patch stateless chatroom example
+- meteor service
 
 ## To Do (Not Fun)
 
@@ -116,7 +114,7 @@ import curry   from 'ramda/src/curry'
 import merge   from 'ramda/src/merge'
 
 const init = () => {
- return { }
+  return { }
 }
 
 const update = curry((state, action) => {
