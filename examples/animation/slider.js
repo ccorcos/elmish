@@ -7,6 +7,8 @@ import filter  from 'ramda/src/filter'
 import append  from 'ramda/src/append'
 import sum     from 'ramda/src/sum'
 import map     from 'ramda/src/map'
+import add     from 'ramda/src/add'
+import pipe    from 'ramda/src/pipe'
 import always  from 'ramda/src/always'
 
 import {easeInOutQuad} from 'tween-functions'
@@ -19,31 +21,39 @@ const init = () => {
   return {
     right: false,
     animations: [],
-    t: undefined
   }
 }
 
+const unfinished = (a) => {
+  return a.time < a.duration
+}
+
+const addDt = curry((dt, a) => {
+  return evolve({
+    time: add(dt)
+  }, a)
+})
+
 const update = curry((state, action) => {
-  const now = Date.now()
   switch (action.type) {
     case 'toggle': 
       return evolve({
         right: not,
         animations: append({
-          init: now,
+          time: 0,
           duration: 1000,
           // if its on the right and going to be left, we want the easing function
           // to represent the distance from where it should be which is +trackWidth until 0.
           // if its on the left and going to be right, its -trackWidths til 0
           endpoints: state.right ? [slideWidth, 0] : [-slideWidth, 0]
         }),
-        t: always(now)
       }, state)
     case 'tick':
-      // keep time as part of the animation so we can
       return evolve({
-        animations: filter(a => ((now - a.init) <= a.duration)),
-        t: always(now)
+        animations: pipe(
+          map(addDt(action.dt)),
+          filter(unfinished)
+        )
       }, state)
     default:
       return state
@@ -53,7 +63,7 @@ const update = curry((state, action) => {
 const declare = curry((dispatch, state) => {
 
   const getProgress = (a) => {
-    return easeInOutQuad(state.t - a.init, a.endpoints[0], a.endpoints[1], a.duration)
+    return easeInOutQuad(a.time, a.endpoints[0], a.endpoints[1], a.duration)
   }
 
   const dx = sum(map(getProgress, state.animations))
@@ -73,7 +83,7 @@ const declare = curry((dispatch, state) => {
   }
 
   const toggle = () => dispatch({type: 'toggle'})
-  const tick = () => dispatch({type: 'tick'})
+  const tick = (dt) => dispatch({type: 'tick', dt})
 
   return {
     html:

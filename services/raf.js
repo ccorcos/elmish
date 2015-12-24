@@ -12,14 +12,29 @@ import raf  from 'raf'
 // another animation frame.
 
 let wait = false
+let time = undefined
+let tick = () => {
+  const now = Date.now()
+  const dt = now - time
+  time = now
+  return dt
+}
 const handleRafs = (rafs=[]) => {
+  if (rafs.length === 0) {
+    time = undefined
+    return
+  }
   if (!wait) {
     wait = true
+    if (!time) {
+      time = Date.now()
+    }
     raf(() => {
       const [first, ...rest] = rafs
-      map(call, rest)
+      const dt = tick()
+      rest.map(f => f(dt))
       wait = false
-      first && first()
+      first && first(dt)
     })
   }
 }
