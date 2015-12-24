@@ -11,6 +11,12 @@ import mergeWith from 'ramda/src/mergeWith'
 
 const concatObjValues = mergeWith(concat)
 
+const strangle = curry((min, max, value) => {
+  return value < min ? min :
+         value > max ? max :
+         value
+})
+
 import 'styles/debug.styl'
 
 // could have used the react-svg-loader instead ;)
@@ -55,6 +61,16 @@ const debug = (app) => {
         return merge(state, {
           live: false,
           time: action.time
+        })
+      case 'inc':
+        return merge(state, {
+          live: false,
+          time: strangle(0, state.states.length -1, state.time + 1)
+        })
+      case 'dec':
+        return merge(state, {
+          live: false,
+          time: strangle(0, state.states.length -1, state.time - 1)
         })
       case 'child':
         if (state.live) {
@@ -101,7 +117,9 @@ const debug = (app) => {
       ])
 
     const hotkeys = [{
-      'control d': () => dispatch({type: 'toggle'})
+      'control d': () => dispatch({type: 'toggle'}),
+      'left': () => dispatch({type: 'dec'}),
+      'right': () => dispatch({type: 'inc'})
     }]
 
     if (state.live) {
