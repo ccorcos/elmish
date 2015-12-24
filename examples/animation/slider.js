@@ -86,7 +86,8 @@ const declare = curry((dispatch, state) => {
     hotkeys: [{
       't': toggle
     }],
-    raf: state.animations.length == 0 ? [] : [ tick ]
+    raf: state.animations.length == 0 ? [] : [ tick ],
+    toggle: [ toggle ]
   }
 })
 
