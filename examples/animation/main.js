@@ -18,6 +18,7 @@ import hotkeys from 'elmish/services/hotkeys'
 import raf from 'elmish/services/raf'
 
 import debug from 'elmish/ui/debug'
-import app from 'elmish/examples/animation/slider'
+import listOf from 'elmish/ui/listOf'
+import slider from 'elmish/examples/animation/slider'
 
-start(debug(app), [render, raf, hotkeys])
+start(debug(listOf(slider)), [render, raf, hotkeys])

@@ -1,6 +1,9 @@
 ## To Do (Fun)
 
 - additive animations
+  - can we do raf with dx? that way they'd recover from time travel
+  - how does this work with two sliders?
+  - can we do these animations with physics?
 - CSS in JS https://speakerdeck.com/vjeux/react-css-in-js
 
 - ui components (with routing examples!)
