@@ -4,12 +4,13 @@ import evolve  from 'ramda/src/evolve'
 import __      from 'ramda/src/__'
 
 // This is a basic history UI component that mimics the typical
-// window.history functionality and works with the routing service.
-// This component lets the the window.history entirely dictate the
+// `window.history` functionality and works with the routing service.
+// This component lets `window.history` entirely dictate the
 // the current route. Use this component when you want the most basic
-// typical routing associated with the browser.
+// linear routing typically associated with the browser.
 const history = (app) => {
 
+  // app is a component but gets some extra properties.
   // app : {
   //   init    : () => state
   //   update  : (state, action) => state

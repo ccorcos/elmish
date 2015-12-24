@@ -1,11 +1,3 @@
-/*
-
-We need to make two apps.
-
-1) a basic router that implements a typical browser history
-2) a more complicated tab-nav app using native forward and back buttons
-
-*/
 
 import start from 'elmish'
 import render from 'elmish/services/react'
