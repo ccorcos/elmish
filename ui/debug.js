@@ -119,7 +119,8 @@ const debug = (app) => {
     const hotkeys = [{
       'control d': () => dispatch({type: 'toggle'}),
       'left': () => dispatch({type: 'dec'}),
-      'right': () => dispatch({type: 'inc'})
+      'right': () => dispatch({type: 'inc'}),
+      'space': () => state.live ? dispatch({type:'pause'}) : dispatch({type: 'play'})
     }]
 
     if (state.live) {
