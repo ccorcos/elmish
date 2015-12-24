@@ -1,6 +1,6 @@
 /*
 
-Routing is challenging because it's so well integrated into browsers. Luckily
+Routing is challenging because it's so deeply integrated into browsers. Luckily
 the History API isn't too hard to to work with, but we'll still have to change
 the way we fundamentally think about routing in the browser.
 
