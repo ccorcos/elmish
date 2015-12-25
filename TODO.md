@@ -1,5 +1,8 @@
 ## To Do (Fun)
 
+- animation with 20 sliders -- batch react renders
+- debug css -> js
+
 - additive animations
   - can we do raf with dt? that way they'd recover from time travel
   - how does this work with two sliders?
@@ -26,8 +29,6 @@
 - record, save, replay
 - generative testing
 - predictive testing
-
-
 
 ## Extras
 
