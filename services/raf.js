@@ -3,8 +3,16 @@ import prop from 'ramda/src/prop'
 import call from 'ramda/src/call'
 import map  from 'ramda/src/map'
 import raf  from 'raf'
+import ReactDOM from 'react-dom'
 
-import ReactUpdates from 'react/lib/ReactUpdates'
+const render = ReactDOM.render.bind(ReactDOM)
+const noop = () => {console.log('blocked')}
+const blockRender = () => {
+  ReactDOM.render = noop
+}
+const unblockRender = () => {
+  ReactDOM.render = render
+}
 
 // every time we call a tick, we'll get a re-render and another
 // set of animations, so if there are many animations, we'll get
@@ -26,24 +34,12 @@ let calcDt = () => {
   return dt
 }
 
-// For performance reasons, we'll batch React renders with raf
-// using the built-in batching strategy api outlines here:
-// https://github.com/petehunt/react-raf-batching/issues/8
-let ReactRAFBatchingStrategy = {
-  isBatchingUpdates: false,
-  batchedUpdates: function(callback,a) { callback(a) }
-}
-
-// inject the batching strategy
-ReactUpdates.injection.injectBatchingStrategy(ReactRAFBatchingStrategy)
-
 // Here we'll handle an array of raf animation tick requests
 const handleRafs = (rafs=[]) => {
   
   if (rafs.length === 0) {
     // if there are no animations, unset the time and stop batching
     time = undefined
-    ReactRAFBatchingStrategy.isBatchingUpdates = false
     return
   }
 
@@ -53,17 +49,17 @@ const handleRafs = (rafs=[]) => {
     // initialize the time for calculating `dt`
     if (!time) { 
       time = Date.now()
-      ReactRAFBatchingStrategy.isBatchingUpdates = true
     }
     raf(() => {
+      // blockRender()
       const [first, ...rest] = rafs
       const dt = calcDt()
       rest.map(f => f(dt))
       // stop waiting to trigger another raf if we're still
       // animating after this tick
       wait = false
+      // unblockRender()
       first && first(dt)
-      ReactUpdates.flushBatchedUpdates()
     })
   }
 }
