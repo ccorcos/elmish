@@ -1,6 +1,13 @@
 ## To Do (Fun)
 
+- use throttle instead of wait
+- no globals! add that to the README
+- make throttle$ go though the serivces as an argument
+
 - animation with 20 sliders -- batch react renders
+  - throttle fx stream
+  - throttleWhen flyd function
+  - make throttling pure
 - debug css -> js
 
 - additive animations

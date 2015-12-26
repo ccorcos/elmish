@@ -11,14 +11,19 @@ Services simply listen to the effects$ and perform side-effects and mutations.
 service : (effects) => ()
 */
 
-import flyd  from 'flyd'
-import ap  from 'ramda/src/ap'
+import flyd from 'flyd'
+import apply from 'ramda/src/apply'
+import map from 'ramda/src/map'
+import __ from 'ramda/src/__'
+import throttleWhen from 'elmish/utils/throttleWhen'
 
 const start = ({init, declare, update}, services=[]) => {
   const action$ = flyd.stream()
   const state$ = flyd.scan(update, init(), action$)
-  const effects$ = flyd.map(declare(action$), state$)
-  ap(services, [effects$])
+  const throttle$ = flyd.stream(false)
+  const throttledState$ = throttleWhen(throttle$, state$)
+  const effects$ = flyd.map(declare(action$), throttledState$)
+  map(apply(__, [effects$, throttle$]), services)
   return {action$, state$, effects$}
 }
 

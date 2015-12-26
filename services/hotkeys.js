@@ -19,6 +19,7 @@ import pick from 'ramda/src/pick'
 import map from 'ramda/src/map'
 import reduce from 'ramda/src/reduce'
 import fromPairs from 'ramda/src/fromPairs'
+import mergeWith from 'ramda/src/mergeWith'
 
 const keymap = {
   8: 'backspace',
@@ -67,90 +68,93 @@ const aliases = {
   'control': 'ctrl',
 }
 
-let keys = []
-let listeners = {}
+const hotkeyListener = (effect$, throttle$) => {
 
-const addKey = (key) => {
-  keys = uniq(append(key, keys))
-}
+  let keys = []
+  let listeners = {}
 
-const removeKey = (key) => {
-  keys = filter(complement(equals(key)), keys)
-}
-
-const lookupEventKey = (e) =>  {
-  const code = e.which || e.keyCode
-  return keymap[code] || String.fromCharCode(code).toLowerCase()
-}
-
-const isInput = (e) => {
-  const element = e.target || e.srcElement
-  if (element.className.indexOf('with-hotkeys') > -1) { return false }
-  return element.tagName === 'INPUT' || element.tagName === 'SELECT' || element.tagName === 'TEXTAREA' || element.isContentEditable
-}
-
-const currentHotkey = () => {
-  return keys.sort().join(' ')
-}
-
-const translateHotkeyStr= (str) => {
-  return str.split(' ')
-    .map((k) => aliases[k] || k)
-    .sort()
-    .join(' ')
-}
-
-const translateHotkeyListeners = (obj) => {
-  let l = {}
-  Object.keys(obj).map((k) => {
-    l[translateHotkeyStr(k)] = obj[k]
-  })
-  return l
-}
-
-const mergeHotkeys = (a, b) => {
-  const aKeys = Object.keys(a)
-  const bKeys = Object.keys(b)
-  const uniqHotkeys = merge(
-    pick(difference(aKeys, bKeys), a),
-    pick(difference(bKeys, aKeys), b)
-  )
-  const sameKeys = intersection(aKeys, bKeys)
-  const joinKeysAsPairs = (key) => [key, () => { a[key](); b[key]() }]
-  const sameHotkeys = fromPairs(map(joinKeysAsPairs, sameKeys))
-  return merge(uniqHotkeys, sameHotkeys)
-}
-
-const mergeAllHotkeys = (list) => {
-  return reduce(mergeHotkeys, {}, list)
-}
-
-const setListeners = (l=[]) => {
-  listeners = mergeAllHotkeys(map(translateHotkeyListeners, l))
-}
-
-document.addEventListener('keydown', (e) => {
-  if (isInput(e)) { return }
-  const key = lookupEventKey(e)
-  addKey(key)
-  const hotkey = currentHotkey()
-  const callback = listeners[hotkey]
-  if (callback) {
-    e.preventDefault()
-    e.stopPropagation()
-    callback(hotkey)
-    // keyup only fires *after* the default action has been performed
-    // http://www.quirksmode.org/dom/events/keys.html
-    removeKey(key)
+  const addKey = (key) => {
+    keys = uniq(append(key, keys))
   }
-})
 
-document.addEventListener('keyup', (e) => {
-  if (isInput(e)) { return}
-  const key = lookupEventKey(e)
-  removeKey(key)
-})
+  const removeKey = (key) => {
+    keys = filter(complement(equals(key)), keys)
+  }
 
-const hotkeyListener = (effect$) => flyd.on(setListeners, flyd.map(prop('hotkeys'), effect$))
+  const lookupEventKey = (e) =>  {
+    const code = e.which || e.keyCode
+    return keymap[code] || String.fromCharCode(code).toLowerCase()
+  }
+
+  const isInput = (e) => {
+    const element = e.target || e.srcElement
+    if (element.className.indexOf('with-hotkeys') > -1) { return false }
+    return element.tagName === 'INPUT' || element.tagName === 'SELECT' || element.tagName === 'TEXTAREA' || element.isContentEditable
+  }
+
+  const currentHotkey = () => {
+    return keys.sort().join(' ')
+  }
+
+  const translateHotkeyStr= (str) => {
+    return str.split(' ')
+      .map((k) => aliases[k] || k)
+      .sort()
+      .join(' ')
+  }
+
+  const translateHotkeyListeners = (obj) => {
+    let l = {}
+    Object.keys(obj).map((k) => {
+      l[translateHotkeyStr(k)] = obj[k]
+    })
+    return l
+  }
+
+  const concatFuncs = (a, b) => {
+    return () => {
+      a()
+      b()
+    }
+  }
+
+  const mergeAllHotkeys = (list) => {
+    return reduce(mergeWith(concatFuncs), {}, list)
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (isInput(e)) { return }
+    const key = lookupEventKey(e)
+    addKey(key)
+    const hotkey = currentHotkey()
+    const callback = listeners[hotkey]
+    if (callback) {
+      e.preventDefault()
+      e.stopPropagation()
+      // there may be multiple listeners for the same hotkey
+      // so make sure to throttle so we dont re-render unnecessarily
+      throttle$(true)
+      callback(hotkey)
+      throttle$(false)
+      // keyup only fires *after* the default action has been performed
+      // http://www.quirksmode.org/dom/events/keys.html
+      removeKey(key)
+    }
+  })
+
+  document.addEventListener('keyup', (e) => {
+    if (isInput(e)) { return}
+    const key = lookupEventKey(e)
+    removeKey(key)
+  })
+
+  const setListeners = (l=[]) => {
+    listeners = mergeAllHotkeys(map(translateHotkeyListeners, l))
+  }
+
+  const hotkeys$ = flyd.map(prop('hotkeys'), effect$)
+
+  flyd.on(setListeners, hotkeys$)
+}
 
 export default hotkeyListener

@@ -62,59 +62,64 @@ import prop     from 'ramda/src/prop'
 import reduce   from 'ramda/src/reduce'
 import merge    from 'ramda/src/merge'
 
-// This is the declarative route object
-let spec = null
+const router = (effect$) => {
 
-// Set the initial browser history state
-window.history.replaceState({t: 0,  path: window.location.pathname}, '')
+  // This is the declarative route object
+  let spec = null
 
-// keep track of time so we can determine if onpopstate is forward, back,
-// pageLoad, or an entirely different route from history.
-let time = 0
+  // Set the initial browser history state
+  window.history.replaceState({t: 0,  path: window.location.pathname}, '')
 
-window.onpopstate = function(event) {
-  const {t, path} = event.state
-  
-  if (t === time) {
-    // if we're on the same page, then don't do anything
+  // keep track of time so we can determine if onpopstate is forward, back,
+  // pageLoad, or an entirely different route from history.
+  let time = 0
+
+  window.onpopstate = function(event) {
+    const {t, path} = event.state
+    
+    if (t === time) {
+      // if we're on the same page, then don't do anything
+      return
+    }
+
+    if (t === time + 1) {
+      // the user clicked forward
+      time = time + 1
+      spec && spec.onForward && spec.onForward(path, t)
+      return
+    }
+
+    if (t === time - 1) {
+      // the user clicked back
+      time = time - 1
+      spec && spec.onBack && spec.onBack(path, t)
+      return
+    }
+
+    // otherwise, the user has selected an item from history
+    if (!path) {
+      console.warn("Uh oh. Unexpected route change. Please report this error.")
+      return
+    }
+
+    time = t
+    spec && spec.onSkip && spec.onSkip(path, t)
     return
   }
 
-  if (t === time + 1) {
-    // the user clicked forward
-    time = time + 1
-    spec && spec.onForward && spec.onForward(path, t)
-    return
+  const setRoutingSpec = (specs) => {
+    const nextSpec = reduce(merge, {}, specs)
+    const {path} = nextSpec
+    if (path !== window.location.pathname) {
+      time = time + 1
+      window.history.pushState({t: time, path: path}, '', path)
+    }
+    spec = nextSpec
   }
 
-  if (t === time - 1) {
-    // the user clicked back
-    time = time - 1
-    spec && spec.onBack && spec.onBack(path, t)
-    return
-  }
+  const route$ = flyd.map(prop('route'), effect$)
+  flyd.on(setRoutingSpec, route$)
 
-  // otherwise, the user has selected an item from history
-  if (!path) {
-    console.warn("Uh oh. Unexpected route change. Please report this error.")
-    return
-  }
-
-  time = t
-  spec && spec.onSkip && spec.onSkip(path, t)
-  return
 }
 
-const setRoutingSpec = (specs) => {
-  const nextSpec = reduce(merge, {}, specs)
-  const {path} = nextSpec
-  if (path !== window.location.pathname) {
-    time = time + 1
-    window.history.pushState({t: time, path: path}, '', path)
-  }
-  spec = nextSpec
-}
-
-const routeListener = (effect$) => flyd.on(setRoutingSpec, flyd.map(prop('route'), effect$))
-
-export default routeListener
+export default router

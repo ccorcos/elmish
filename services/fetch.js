@@ -34,30 +34,34 @@ function exposeErrors(fn) {
   }
 }
 
-let pending = []
+const fetchListener = (effect$) => {
 
-const fetch = (requests=[]) => {
-  const newRequests = differenceWith(sameKey, requests, pending)
-  pending = requests
-  newRequests.map((request) => {
-    fetchWithJson(request.url, omit(['key', 'url'], request))
-      .then(exposeErrors((result) => {
-        // only dispatch the action if its being requested still
-        const req = find(propEq('key', request.key), pending)
-        if (req) {
-          req.onSuccess(result)
-        }
-      }))
-      .catch(exposeErrors((error) => {
-        // only dispatch the action if its being requested still
-        const req = find(propEq('key', request.key), pending)
-        if (req) {
-          req.onError(error)
-        }
-      }))
-  })
+  let pending = []
+
+  const fetch = (requests=[]) => {
+    const newRequests = differenceWith(sameKey, requests, pending)
+    pending = requests
+    newRequests.map((request) => {
+      fetchWithJson(request.url, omit(['key', 'url'], request))
+        .then(exposeErrors((result) => {
+          // only dispatch the action if its being requested still
+          const req = find(propEq('key', request.key), pending)
+          if (req) {
+            req.onSuccess(result)
+          }
+        }))
+        .catch(exposeErrors((error) => {
+          // only dispatch the action if its being requested still
+          const req = find(propEq('key', request.key), pending)
+          if (req) {
+            req.onError(error)
+          }
+        }))
+    })
+  }
+
+  const fetch$ = flyd.map(prop('http'), effect$)
+  flyd.on(fetch, fetch$)
 }
-
-const fetchListener = (effect$) => flyd.on(fetch, flyd.map(prop('http'), effect$))
 
 export default fetchListener

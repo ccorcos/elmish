@@ -3,8 +3,13 @@ import prop     from 'ramda/src/prop'
 import raf      from 'raf'
 import ReactDOM from 'react-dom'
 
-const render = (html) => ReactDOM.render(html, document.getElementById('root'))
-const renderer = (effect$) => flyd.on(render, flyd.map(prop('html'), effect$))
+const renderer = (effects$, throttle$) => {
+  const root = document.getElementById('root')
+  const html$ = flyd.map(prop('html'), effects$)
+  flyd.on((html) => { 
+    ReactDOM.render(html, root)
+  }, html$)
+}
 
 export default renderer
 

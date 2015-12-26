@@ -9,4 +9,3 @@
 // import 'elmish/examples/hackernews/main.js'
 // import 'elmish/examples/routing/main.js'
 import 'elmish/examples/animation/main.js'
-
