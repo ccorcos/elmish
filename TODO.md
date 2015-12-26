@@ -1,11 +1,9 @@
 ## To Do (Fun)
 
-- debug
-  - css -> js
-  - ramda -> immutable.js
-
 - physics animations
 - assortment of sliders, durations, and easing functions
+
+- publish examples on github _pages with automated script
 
 - CSS in JS https://speakerdeck.com/vjeux/react-css-in-js
 

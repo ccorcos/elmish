@@ -8,28 +8,65 @@ import inc from 'ramda/src/inc'
 import omit from 'ramda/src/omit'
 import concat from 'ramda/src/concat'
 import mergeWith from 'ramda/src/mergeWith'
+import strangle from 'elmish/utils/strangle'
 
 const concatObjValues = mergeWith(concat)
 
-const strangle = curry((min, max, value) => {
-  return value < min ? min :
-         value > max ? max :
-         value
-})
-
-import 'styles/debug.styl'
+const styles = {
+  panel: {
+    transition: 'transform 0.2s ease-in-out',
+    transform: 'translate3d(0, 0, 0)',
+    position: 'fixed',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    background: 'transparent',
+    height: 30,
+    maxWidth: 500,
+    margin: '10px auto',
+    display: 'flex',
+    flexDirection: 'row'
+  },
+  input: {
+    flex: 1,
+    marginLeft: 10,
+    outline: 'none'
+  },
+  label: {
+    flex: '0 0 2em',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  button: {
+    flex: '0 0 30px',
+    outline: 'none',
+    border: 0,
+    backgroundColor: 'transparent',
+    padding: 0,
+    margin: 0
+  },
+  svg: {
+    height: 30,
+    width: 30
+  },
+  hidden: {
+    transform: 'translate3d(0, 50px, 0)'
+  }
+}
 
 // could have used the react-svg-loader instead ;)
+// https://github.com/boopathi/react-svg-loader
 const svgs = {
   pause:
-    h('svg', {viewBox: "0 0 30 30"},
+    h('svg', {style: styles.svg, viewBox: "0 0 30 30"},
       h('g', [
         h('rect', {x:9, y:4, width:5, height:22}),
         h('rect', {x:17, y:4, width:5, height:22})
       ])
     ),
   play:
-    h('svg', {viewBox: "0 0 30 30"},
+    h('svg', {style: styles.svg, viewBox: "0 0 30 30"},
       h('path', {
         d: "M26.5,15.5 L7.5,27.5 L7.5,3.5 L26.5,15.5 L26.5,15.5 Z"
       })
@@ -101,19 +138,23 @@ const debug = (app) => {
     const html =
       h('div.debug', [
         h('div.app', {}, effects.html),
-        h('div.panel' + (state.hidden ? '.hidden' : ''), [
+        h('div.panel' + (state.hidden ? '.hidden' : ''), {
+          style: state.hidden ? merge(styles.panel, styles.hidden) : styles.panel
+        }, [
           button(toggle, {
+            style: styles.button,
             onClick: () => dispatch({type: toggle})
           }),
           h(`input`, {
             type: 'range',
             className: 'with-hotkeys',
+            style: styles.input,
             min: 0,
             max: state.states.length - 1,
             value: state.time,
             onChange: (e) => dispatch({type: 'set_time', time: Number(e.target.value)})
           }),
-          h(`label`, {}, state.time)
+          h(`label`, {style: styles.label}, state.time)
         ])
       ])
 
