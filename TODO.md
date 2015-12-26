@@ -1,19 +1,12 @@
 ## To Do (Fun)
 
-- use throttle instead of wait
-- no globals! add that to the README
-- make throttle$ go though the serivces as an argument
+- debug
+  - css -> js
+  - ramda -> immutable.js
 
-- animation with 20 sliders -- batch react renders
-  - throttle fx stream
-  - throttleWhen flyd function
-  - make throttling pure
-- debug css -> js
+- physics animations
+- assortment of sliders, durations, and easing functions
 
-- additive animations
-  - can we do raf with dt? that way they'd recover from time travel
-  - how does this work with two sliders?
-  - can we do these animations with physics?
 - CSS in JS https://speakerdeck.com/vjeux/react-css-in-js
 
 - ui components (with routing examples!)

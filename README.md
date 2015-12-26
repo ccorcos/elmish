@@ -25,6 +25,7 @@ Check out `entry.js` to select the example you want to run and work your way thr
   - The UI should be a pure function of state.
   - There should be no side-effects tied to the render cycle.
   - Declare what your want, not how to do it.
+  - No global variables.
 - **Serializable States and Actions**
   - Trivial event tracking
   - Send states and actions to the server on any runtime exceptions.

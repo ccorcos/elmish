@@ -6,6 +6,10 @@ import contains from 'ramda/src/contains'
 import batchWhen from 'elmish/utils/batchWhen'
 import raf  from 'raf'
 
+// There may be multiple animations going on at the same time. So
+// we want to throttle the effects / rendering while we batch compute 
+// all the tick actions.
+
 const animator = (effect$, throttle$) => {
 
   const raf$ = pipe(

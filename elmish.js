@@ -8,7 +8,10 @@ update : (state, action) => state
 declare : (dispatch, state) => effects
 
 Services simply listen to the effects$ and perform side-effects and mutations.
-service : (effects) => ()
+Services may have to fire serveral action callback at once. We provide a 
+throttling mechanism to prevent unnecessary calls to declare and other services.
+service : (effects, throttle) => ()
+
 */
 
 import flyd from 'flyd'
