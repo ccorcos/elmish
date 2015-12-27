@@ -1,11 +1,36 @@
 ## To Do (Fun)
 
-- physics animations
-- assortment of sliders, durations, and easing functions
+- tabnav app
+  - routing and view controllers
+  - github api with login and oauth
+  - tabs
+    - search users
+    - search repos
+    - profile
+  - pages
+    - repo page
+      - name, owner, stargazers
+    - user page
+      - name, repos, following, followers
+  - http caching
 
-- publish examples on github _pages with automated script
-
-- CSS in JS https://speakerdeck.com/vjeux/react-css-in-js
+- simple chatroom example
+  - responsive splitview
+  - list of rooms
+    - in memory db for now is fine
+    - use aws dynamo later
+  - users
+    - use localStorage service to save user's name for now
+    - user passport for user auth later
+  - queries
+    - simple chatrooms for now
+    - complicated reactive aggregation queries possibly with graphql later
+      - room owner
+      - room info / stats
+      - user info / stats
+      - tabnav with friends, groups, etc.
+  - websockets
+  - latency compensation
 
 - ui components (with routing examples!)
   - responsive splitvc -- http://nshipster.com/uisplitviewcontroller/
@@ -15,18 +40,36 @@
 - json-diff-patch stateless chatroom example
 - meteor service
 
+- performance and memoization
+  - pass a function with a context to lazily evaluate child functions in the tree
+
 ## To Do (Not Fun)
 
 - http caching
 - graphql caching
-- performance and memoization
 - latency compensation
 - auth service?
-- immutable with functionize
 - send errors on exceptions
 - record, save, replay
 - generative testing
 - predictive testing
+
+- physics animations
+  - gravitas.js
+  - hammer.js
+  - slalom.js
+  - assortment of sliders, durations, and easing functions
+
+- cassoway constrain solver for layout in js
+  - make a UI for building UI's
+  - slalom.js
+  - autolayout.js
+
+- publish examples on github _pages with automated script
+
+- CSS in JS https://speakerdeck.com/vjeux/react-css-in-js
+  - body styles
+  - before and after styles
 
 ## Extras
 
@@ -123,7 +166,7 @@ const init = () => {
 
 const update = curry((state, action) => {
   switch (action.type) {
-    case 'something': 
+    case 'something':
       return merge(state, {
 
       })
@@ -149,6 +192,6 @@ export default {init, declare, update}
 
 // how does this work with data and caching etc? embrace the log.
 // log everything and the reducers just maintain intermediary state.
-// remember what he said about how kafka works. we can run through 
+// remember what he said about how kafka works. we can run through
 // the logs and incrementally reduce them while also trimming the logs
 // so we only keep what matters.
