@@ -1,5 +1,9 @@
 ## To Do (Fun)
 
+- ui layout
+- responsive ui
+- ui animation
+
 - tabnav app
   - routing and view controllers
   - github api with login and oauth
@@ -64,6 +68,7 @@
   - make a UI for building UI's
   - slalom.js
   - autolayout.js
+  - https://developer.mozilla.org/en-US/docs/Web/API/Window/matchMedia
 
 - publish examples on github _pages with automated script
 

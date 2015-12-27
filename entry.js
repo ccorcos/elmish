@@ -8,4 +8,5 @@
 // import 'elmish/examples/github/main.js'
 // import 'elmish/examples/hackernews/main.js'
 // import 'elmish/examples/routing/main.js'
-import 'elmish/examples/animation/main.js'
+// import 'elmish/examples/animation/main.js'
+import 'elmish/examples/tabvc/main.js'
