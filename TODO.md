@@ -1,8 +1,35 @@
 ## To Do (Fun)
 
+- reducing boilerplate and refactoring
+  - component for wiring up children
+  - use R, E and h so we dont have to import so much!
+  - create a `src` folder for everything!
+  - throw the tutorial in the examples directory
+    - along with webpack config and its own package.json
+  - concatEffects, concatAllEffects, clamp
+  - bootstrap.sh for getting started with everything
+
+- webpack distributable
+- todomvc?
+
+- performance
+  - pass a context down so we can memoize return values along with bound functions
+
+- comment up all of tabvc and explain how its working
+- explain how to build higher-order components for animation
+- tabbar with slider animation
+- child action helpers and conventions
+- action/state squashing/compression
+- state/action/effects inspector
+- tabvc example with routing
+- navvc component
+- tab-nav layout app
+
 - ui layout
 - responsive ui
 - ui animation
+
+- context with each view to memoize `declare` as well as bounds functions
 
 - tabnav app
   - routing and view controllers
@@ -47,7 +74,7 @@
 - performance and memoization
   - pass a function with a context to lazily evaluate child functions in the tree
 
-## To Do (Not Fun)
+## To Do (Not As Fun)
 
 - http caching
 - graphql caching

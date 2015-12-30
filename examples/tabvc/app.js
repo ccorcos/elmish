@@ -3,6 +3,9 @@ import h       from 'react-hyperscript'
 import curry   from 'ramda/src/curry'
 import merge   from 'ramda/src/merge'
 
+import tabber from 'elmish/examples/tabvc/tabber'
+import pager from 'elmish/examples/tabvc/pager'
+import tabbar from 'elmish/examples/tabvc/tabbar'
 import tabvc   from 'elmish/examples/tabvc/tabvc'
 
 const page = (color) => {
@@ -31,7 +34,11 @@ const page = (color) => {
 
 
 const colors = ['red', 'green', 'blue', 'black']
+const pages = colors.map(page)
 
-const vc = tabvc(colors.map(page), colors)
+const vc = tabvc([
+  tabber(pages),
+  tabbar(colors)
+])
 
 export default vc
