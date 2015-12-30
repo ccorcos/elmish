@@ -7,8 +7,8 @@ module.exports = {
   devtool: 'source-map',
   entry: {
     app: [
-    'webpack-hot-middleware/client',
-    'entry.js'
+      'webpack-hot-middleware/client',
+      'entry.js'
     ],
   },
   output: {

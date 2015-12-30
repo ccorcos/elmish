@@ -1,15 +1,20 @@
 ## To Do (Fun)
 
-- reducing boilerplate and refactoring
+- tutorials
   - component for wiring up children
-  - use R, E and h so we dont have to import so much!
-  - create a `src` folder for everything!
-  - throw the tutorial in the examples directory
-    - along with webpack config and its own package.json
-  - concatEffects, concatAllEffects, clamp
-  - bootstrap.sh for getting started with everything
+  - context for memoizing functions, etc.
 
-- webpack distributable
+- move tutorial out of examples folder
+
+- fix the rest of the examples with the right paths
+
+- webpack distribute.
+- performance, pass a context to start.
+
+- goals for later
+  - other than performance obviously
+  - be able to separate animation state from child states from actual component state.
+
 - todomvc?
 
 - performance
