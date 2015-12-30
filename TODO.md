@@ -1,40 +1,27 @@
 ## To Do (Fun)
 
+- performance!!
+
 - tutorials
   - component for wiring up children
+    - tutorial 8 app.js
+    - tabber.js
+    - there are many different circumstances and its hard to really figure it out...
   - context for memoizing functions, etc.
+    - should be able to pass a mutable object into the top-level component and pass it down
+      then use it to memoize functions each time down the render tree with its own garbage collection.
 
-- move tutorial out of examples folder
-
-- fix the rest of the examples with the right paths
-
-- webpack distribute.
-- performance, pass a context to start.
-
-- goals for later
-  - other than performance obviously
-  - be able to separate animation state from child states from actual component state.
-
+- fix the example with the proper paths, etc.
+- webpack distribute, deploy demos on gh_pages branch.
 - todomvc?
 
-- performance
-  - pass a context down so we can memoize return values along with bound functions
-
 - comment up all of tabvc and explain how its working
-- explain how to build higher-order components for animation
 - tabbar with slider animation
-- child action helpers and conventions
 - action/state squashing/compression
 - state/action/effects inspector
 - tabvc example with routing
 - navvc component
 - tab-nav layout app
-
-- ui layout
-- responsive ui
-- ui animation
-
-- context with each view to memoize `declare` as well as bounds functions
 
 - tabnav app
   - routing and view controllers
