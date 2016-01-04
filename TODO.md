@@ -1,6 +1,12 @@
 ## To Do (Fun)
 
-- performance!!
+- performance / memoization
+- tabvc
+  - with routing
+- navvc
+- swiper (touch interactions just like ios)
+- matrixvc
+- github explorer app
 
 - tutorials
   - component for wiring up children
@@ -14,6 +20,60 @@
 - fix the example with the proper paths, etc.
 - webpack distribute, deploy demos on gh_pages branch.
 - todomvc?
+
+
+what if you made your own babel plugin to add pipes to js?
+
+List.map(fn).reduce(fn)
+
+But messing with prototypes is bad. And we have functional libraries like Ramda and flyd we can take advantage of.
+
+list |> R.map(fn)
+     |> R.reduce(fn)
+
+three = 1 + 2
+three = (+) 1 2
+three = ((+) 1) 2
+
+add1 = (+) 1
+three = add1 2
+
+we're just used to the parens being the opposite
+
+three = 1 + 2
+three = +(1,2)
+three = +1(2)
+
+sum = list scan add
+sum = (scan) add list sum = scan(add, list)
+
+sum = scan(add)(list)
+
+1 + 2 = 3 is a weird way of saying 3 = add(1, 2) because its a "infix" operator. But the pipe effectively takes care of this.
+
+1 |> add(2)
+
+one plus two equals three. think about how our language works.
+
+We like to say things more declaratively:
+
+A person has a name, a phone number and an address.
+
+In programming, we often think of functions differently.
+
+isPerson = obj => obj && obj.name && obj.phoneNumber && obj.address
+
+If we were thinking more functionally, using ramda or underscore we might do something more like this
+
+fuck, im not using converge right now.
+
+
+map call [has('name') has('phoneNumber') has(address)]
+
+isPerson = reduce(and, true, )
+
+in typed lagnauges, we don't need validators and we use union types.
+
 
 - comment up all of tabvc and explain how its working
 - tabbar with slider animation
