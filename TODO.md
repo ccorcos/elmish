@@ -1,87 +1,17 @@
 ## To Do (Fun)
 
-- performance / memoization
-- tabvc
-  - with routing
-- navvc
-- swiper (touch interactions just like ios)
-- matrixvc
-- github explorer app
+whats the holdup?
+- its not very performant at scale
+- animating everything with rAF will make it less performant
+- so much boilerplate and repetition when there are children but its mildly different every time!
 
-- tutorials
-  - component for wiring up children
-    - tutorial 8 app.js
-    - tabber.js
-    - there are many different circumstances and its hard to really figure it out...
-  - context for memoizing functions, etc.
-    - should be able to pass a mutable object into the top-level component and pass it down
-      then use it to memoize functions each time down the render tree with its own garbage collection.
+- navvc
+- github explorer app
 
 - fix the example with the proper paths, etc.
 - webpack distribute, deploy demos on gh_pages branch.
-- todomvc?
-
-
-what if you made your own babel plugin to add pipes to js?
-
-List.map(fn).reduce(fn)
-
-But messing with prototypes is bad. And we have functional libraries like Ramda and flyd we can take advantage of.
-
-list |> R.map(fn)
-     |> R.reduce(fn)
-
-three = 1 + 2
-three = (+) 1 2
-three = ((+) 1) 2
-
-add1 = (+) 1
-three = add1 2
-
-we're just used to the parens being the opposite
-
-three = 1 + 2
-three = +(1,2)
-three = +1(2)
-
-sum = list scan add
-sum = (scan) add list sum = scan(add, list)
-
-sum = scan(add)(list)
-
-1 + 2 = 3 is a weird way of saying 3 = add(1, 2) because its a "infix" operator. But the pipe effectively takes care of this.
-
-1 |> add(2)
-
-one plus two equals three. think about how our language works.
-
-We like to say things more declaratively:
-
-A person has a name, a phone number and an address.
-
-In programming, we often think of functions differently.
-
-isPerson = obj => obj && obj.name && obj.phoneNumber && obj.address
-
-If we were thinking more functionally, using ramda or underscore we might do something more like this
-
-fuck, im not using converge right now.
-
-
-map call [has('name') has('phoneNumber') has(address)]
-
-isPerson = reduce(and, true, )
-
-in typed lagnauges, we don't need validators and we use union types.
-
 
 - comment up all of tabvc and explain how its working
-- tabbar with slider animation
-- action/state squashing/compression
-- state/action/effects inspector
-- tabvc example with routing
-- navvc component
-- tab-nav layout app
 
 - tabnav app
   - routing and view controllers
@@ -115,6 +45,9 @@ in typed lagnauges, we don't need validators and we use union types.
   - websockets
   - latency compensation
 
+- action/state squashing/compression
+- state/action/effects inspector
+
 - ui components (with routing examples!)
   - responsive splitvc -- http://nshipster.com/uisplitviewcontroller/
   - navvc
@@ -126,8 +59,15 @@ in typed lagnauges, we don't need validators and we use union types.
 - performance and memoization
   - pass a function with a context to lazily evaluate child functions in the tree
 
+- tabvc
+  - with paging animations
+  - with swiping animations
+  - with physics animations (momentum scrolling)
+  - tabbar animations
+
 ## To Do (Not As Fun)
 
+- performance / memoization
 - http caching
 - graphql caching
 - latency compensation

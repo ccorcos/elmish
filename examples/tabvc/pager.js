@@ -1,16 +1,11 @@
-// this component simply provides some animation. it gets a list of pages
-// and animates to the current page with additive animations.
-// it has a companion component called a slider which takes a component
-// and slides it to the proper position which is basically just the inverse
-// of what we're doing here.
-
-
 import curry from 'ramda/src/curry'
 import merge from 'ramda/src/merge'
 import slice from 'ramda/src/slice'
 import evolve from 'ramda/src/evolve'
 import adjust from 'ramda/src/adjust'
+import append from 'ramda/src/append'
 import omit from 'ramda/src/omit'
+import pick from 'ramda/src/pick'
 import prop from 'ramda/src/prop'
 import pipe from 'ramda/src/pipe'
 import map from 'ramda/src/map'
@@ -21,8 +16,8 @@ import concat from 'ramda/src/concat'
 
 import h from 'react-hyperscript'
 
-import animation from 'elmish/animation'
-import concatEffects from 'elmish/utils/concatEffects'
+import animation from 'elmish/src/animation'
+import concatAllEffects from 'elmish/src/utils/concatAllEffects'
 
 
 // The pager is an animated version of the tabber. Its gets a list of pages,
@@ -61,10 +56,10 @@ const pager = (pages, duration=1000, easing='easeInOutQuad') => {
     }
   })
 
-  // we need to fundamentally think this all the way through again.
-
   const declare = curry((dispatch, state, {index}) => {
 
+    // when we get see that we've changes pages, we'll request animation
+    // frame to start animating to the next page
     const changePage = (dt) => dispatch({type:'change_page', index, dt})
     const tick = (dt) => dispatch({type:'tick', dt})
     const raf = (state.index !== index) ? [changePage] :
@@ -72,16 +67,22 @@ const pager = (pages, duration=1000, easing='easeInOutQuad') => {
 
     const dx = animation.compute(state.animations)
 
+    // only render the pages that are onscreen or will be in the animation.
     const begin = Math.floor(Math.min(state.index, state.index + dx))
     const end = Math.ceil(Math.max(state.index, state.index + dx))
 
+    // get all the page effects
     const childDispatch = (i) => (action) => dispatch({type: 'child', action, i})
     const pageEffects = pages.map((page, i) => {
       return page.declare(childDispatch(i), state.states[i])
     })
 
-    // we dont want a page that isnt rendered registering hotkeys or messing with the route.
-    const effects = concatEffects(map(omit(['html', 'hotkeys', 'route']), pageEffects))
+    // we dont want hotkeys to be firing for any of the views that aren't in the
+    // foreground
+    const fgFx = pick(['hotkeys', 'route'], pageEffects[state.index])
+    const bgFx = map(omit(['html', 'hotkeys', 'route']), pageEffects)
+    const effects = concatAllEffects(append(fgFx, bgFx))
+
     const visiblePages = slice(begin, end + 1, map(prop('html'), pageEffects))
 
     const style = {

@@ -1,6 +1,3 @@
-
-// concatAllEffects, concatEffects
-
 import curry from 'ramda/src/curry'
 import merge from 'ramda/src/merge'
 import reduce from 'ramda/src/reduce'
@@ -15,19 +12,55 @@ import prop from 'ramda/src/prop'
 import append from 'ramda/src/append'
 import pick from 'ramda/src/pick'
 import addIndex from 'ramda/src/addIndex'
+import concat from 'ramda/src/concat'
 
 import h from 'react-hyperscript'
 
-import concatEffects from 'elmish/utils/concatEffects'
+import concatAllEffects from 'elmish/src/utils/concatAllEffects'
 
-// a component has children and takes care of the wiring for you :)
+const mapIndexed = addIndex(map)
 
-const tabber = component({
-  declare: (effects, dispatch, state, props) => {
-    const {index} = props
+/*
+Tabber is a simple component that renders one of its children based on
+its `index` prop.
+*/
+
+const tabber = (children) => {
+
+  const init = () => {
+    const initChild = (c) => c.init()
+    return {
+      states: map(initChild, children)
+    }
+  }
+
+  const update = curry((state, action) => {
+    switch (action.type) {
+      case 'child':
+        // XXX I really wish there was a cleaner way of doing this every time.
+        const updateChildState = children[action.index].update(__, action.action)
+        const updateChildStates = adjust(updateChildState, action.index)
+        return evolve({states: updateChildStates}, state)
+      default:
+        return state
+    }
+  })
+
+  const declare = curry((dispatch, state, props) => {
+
+    const declareChild = (child, index) => {
+      return child.declare(
+        (action) => dispatch({type: 'child', action, index}),
+        state.states[index],
+        props
+      )
+    }
+
+    // compute child effects
+    const effects = mapIndexed(declareChild, children)
 
     // foreground view
-    const fg = effects[index]
+    const fg = effects[props.index]
 
     // background effects
     const bgFx = map(
@@ -51,7 +84,9 @@ const tabber = component({
     return merge(fx, {
       html: h('div.pager', { style }, fg.html)
     })
-  }
-})
+  })
+
+  return {init, update, declare}
+}
 
 export default tabber

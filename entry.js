@@ -6,7 +6,7 @@
 // import 'elmish/tutorial/6-hotkeys/main.js'
 // import 'elmish/tutorial/7-http/main.js'
 // import 'elmish/tutorial/8-additive-animations/main.js'
-import 'elmish/tutorial/9-stateless-animations/main.js'
+// import 'elmish/tutorial/9-stateless-animations/main.js'
 
 // below havent been refactored yet
 
@@ -14,4 +14,4 @@ import 'elmish/tutorial/9-stateless-animations/main.js'
 // import 'elmish/examples/hackernews/main.js'
 // import 'elmish/examples/routing/main.js'
 // import 'elmish/examples/animation/main.js'
-// import 'elmish/examples/tabvc/main.js'
+import 'elmish/examples/tabvc/main.js'
