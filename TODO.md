@@ -1,5 +1,15 @@
 ## To Do (Fun)
 
+- performance
+  - listOf
+  - tabvc both ways
+  - lazy
+  - datascript, etc.
+
+- performance
+- more animation examples:
+  - https://medium.com/@nashvail/a-gentle-introduction-to-react-motion-dc50dd9f2459#.xzpy50tp8
+
 whats the holdup?
 - its not very performant at scale
 - animating everything with rAF will make it less performant

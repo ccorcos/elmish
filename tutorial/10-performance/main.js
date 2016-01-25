@@ -1,405 +1,403 @@
-/*
-Goals:
-- remember bound functions for referential equality. For example:
+// lets look at cycle.js for some inspiration
 
-        onClick: () => dispatch({type: 'remove', id: item.id})
-
-    This is hard because we need some place to remember these functions
-    and dispose of them when we're no longer using them. I've invented
-    a concept of a `context` for this. There is a problem that the context
-    is being mutated again and again imperatively. Is there some way of
-    declaratively specifying the bound function requirements?
-
-- lazily compute. React uses `React.createElement(Component, props)` rather
-  than actually calling a component function. This means that the reconciler
-  can determine whether it needs to call the function or not. It would be
-  amazing if we could do this somehow, but its gets complicated. It would be
-  painful to have to repeat the tree structures for every effect -- mapping
-  over the list of items getting their html effects, http effects, etc and
-  manually joining them when whatever ways.
-
-Ideas:
-- What we have here are parallel trees. A render tree, an http request tree,
-  a graphql tree, etc. for all side-effects. If we keep the tree structure
-  rather than concatenate them immediately, then we can use refEq for performance
-  gains, just like react does.
-
-*/
-
-
-
-// this is effectively React.createElement
-const children = (dispatch, state) => {
-  return map(s => [kind.declare, dispatch, item.id, item.state], state.list)
+const update = (action$) => {
+  return scan(add, 0, action$)
 }
 
-// create any bound functions we want to referentially remember
-const context = (dispatch, state) => {
-  forward = (item) => {
+const view = ({inc, dec}) => (state) => {
+  return h('div', [
+    h('button', {onClick: dec}, '-'),
+    h('span', state),
+    h('button', {onClick: inc}, '+')
+  ])
+}
+
+const declare = (dispatch$, state$) => {
+  const inc = () => dispatch$(+1)
+  const dec = () => dispatch$(-1)
+  return {
+    html$: map(view({inc, dec}), state$)
+  }
+}
+
+const start = ({update, declare}) => {
+  const action$ = stream()
+  const state$ = update(action$)
+  const effect$ = declare(action$, state$)
+  return effect$
+}
+
+// the benefits of this so far is that inc and dec are created just once
+// and maintain the same reference.
+
+
+// TODO
+// - abstraction (listOf, undoable)
+// - lazy evaluation (esp. React)
+
+// Theres no reason we need to do all this piping through state and actions.
+// The streams should just connect to each other and work. listOf will help
+// understand this. So the following is pretty much wrong:
+
+const filterRoute = curry((id, action$) => {
+  return filter(propEq('route', id), action$)
+})
+
+const pipeRoute = curry((id, action$) => {
+  return pipe(assoc('action', __, {route: id}), action$)
+})
+
+const twoCounters = {
+  update: (action$) => {
+    together = (a, b) => {0: a, 1: b}
+    return lift(
+      together,
+      counter.update(filterRoute(0, action$)),
+      counter.update(filterRoute(1, action$))
+    )
+  },
+  declare: (dispatch$, state$) => {
+
+    const effects = [
+      counter.declare(pipeRoute(0, dispatch$), filter(prop('0'), state$)),
+      counter.declare(pipeRoute(1, dispatch$), filter(prop('1'), state$))
+    ]
+
+    const view = (state) => {
+      // XXX oy this isnt good here
+      return h('div', [
+        effects[0].html$,
+        effects[1].html$
+      ])
+    }
+
     return {
-      [item.id]: (action) => dispatch({type:'child', id: item.id, action})
+      html$: map(view, state$)
     }
   }
-
-  pipe(
-    map(forward)
-    reduce(merge, {})
-  )(state.list)
-
-
-
-  return {
-    insert: () => dispatch({type: 'insert'})
-
-  }
 }
 
-const effects = {
-  html: (dispatch, state) => {
-    h('div.list-of', [
-        h('button.insert', {
-          onClick: () => dispatch({type: 'insert'})
-        }, '+'),
-        state.list.map((item, i) => {
-          return (
-            h('div.item', {key:item.id}, [
-              // use React.createElement!
-              kind.effects.html(childDispatch(item.id) item.state),
-              h('button.remove', {
-                onClick: () => dispatch({type: 'remove', id: item.id})
-              }, 'x')
-            ])
-          )
-        })
-      ])
-  }
-}
+// better twocounters
+// child declarations should happen only once on the outside of any mapping.
 
+const twoCounters = {
+  update: (action$) => {
+    const state0$ = pipe(
+      filter(propEq('counter', 0)),
+      map(prop('action')),
+      counter.update
+    )(action$)
 
+    const state1$ = pipe(
+      filter(propEq('counter', 1)),
+      map(prop('action')),
+      counter.update
+    )(action$)
 
-const declare = curry((dispatch, state) => {
-  const childDispatch = id => action => dispatch({type: 'child_action', action, id})
-  const getChildEffects = (item) => kind.declare(childDispatch(item.id), item.state)
-  const childEffects = map(getChildEffects, state.list)
-  const childEffectsWithoutHtml = map(omit(['html']), childEffects)
-  const nonHtmlEffects = concatAllEffects(childEffectsWithoutHtml)
+    const combineState = (a, b) => {counters: [a, b]}
 
-  return merge(nonHtmlEffects, {
-    html:
-      h('div.list-of', [
-        h('button.insert', {
-          onClick: () => dispatch({type: 'insert'})
-        }, '+'),
-        state.list.map((item, i) => {
-          return (
-            h('div.item', {key:item.id}, [
-              childEffects[i].html,
-              h('button.remove', {
-                onClick: () => dispatch({type: 'remove', id: item.id})
-              }, 'x')
-            ])
-          )
-        })
-      ])
-  })
-})
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// --- OLDER
-
-
-
-// this is a side-effect! we dont like this. what should we do?we need to bind funcitons
-// and save them somewhere within the computation/heirarchy...
-
-// I could LRU memoize everything since its pure, but I could also inject perfectly efficient
-// memoization if I employ a good strategy.
-
-// context is like a state. thats all. we just have to scan with it.
-
-context = {}
-
-
-context.child(id)
-context.bind(dispatch, {type:'increment'})
-context.call(declare, dispatch, state, context)
-
-
-const Keeper = initial => ({
-  prev: initial,
-  next: {}
-})
-
-const Context = () => []
-
-const Context.insert = (keys, value, ctx) => {
-  return append({keys, value}, ctx)
-}
-
-const refEq = (x, y) => x === y
-const Context.lookup = (keys, ctx) => {
-  // this can be much more efficient if evaluated lazily!
-  const matches = pipe(
-    prop('keys'),
-    zip(keys),
-    map(apply(refEq)),
-    allPass
-  )
-
-  return pipe(
-    findWhere(matches),
-    prop('value')
-  )(ctx)
-}
-
-const Constext.insert = append
-
-Context.bind = (fn, args, ctx) => {
-  const res = Context.lookup([fn, ...args)
-  return res ? res :
-}
-
-
-
-
-
-
-const toChild = curry((dispatch, id, action) => dispatch({type: 'child', action, id}))
-const toRemove = curry((dispatch, id) => dispatch({type: 'remove', id}))
-
-const declare = curry((dispatch, state, props, context) => {
-  let ctx = Keeper(context)
-  // how to we avoid this kind of imperative programming, redefining over ctx each time?
-  [ctx, insert] = Keeper.bind(dispatch, [{type: 'insert'}], ctx)
-
-  const getChildEffects = (item) =>
-    [ctx, childDispatch] = Context.call(toChild, [dispatch, item.id], ctx)
-    [ctx, childContext] = Context.child(item.state, ctx)
-    [ctx, childEffects] = Context.call(kind.declare, childDispatch, item.state, childContext, ctx)
-    [ctx, childRemove] = Context.bind(toRemove, [dispatch, item.id], ctx)
-    return assoc('remove',
-      childRemove,
-      childEffects
+    return lift(combineState, state0$, state1$)
+  },
+  declare: (dispatch$, state$) => {
+    const effects0 = counter.declare(
+      pipe(assoc('action', __, {counter: 0}), dispatch$),
+      map(pipe(prop('counters'), nth(0)), state$)
     )
 
-  const childEffects = map(getChildEffects, state.list)
-  const childEffectsWithoutHtml = map(omit(['html']), childEffects)
-  const nonHtmlEffects = concatAllEffects(childEffectsWithoutHtml)
+    const effects1 = counter.declare(
+      pipe(assoc('action', __, {counter: 1}), dispatch$),
+      map(pipe(prop('counters'), nth(1)), state$)
+    )
 
-  return merge(nonHtmlEffects, {
-    html:
-      h('div.list-of', [
-        h('button.insert', { onClick: insert }, '+'),
-        state.list.map((item, i) => {
-          return (
-            h('div.item', {key:item.id}, [
-              childEffects[i].html,
-              h('button.remove', { onClick: childEffects[i].remove })
-              }, 'x')
-            ])
-          )
-        })
-      ])
-    })
-})
+    combineHtml = (a, b) => h('div', [a, b])
 
-// everything looks nice and memoized now, but at the cost of a major pain in the ass...
-// how can we clean this up?
-
-// make it a stream and use scan?
-
-const declare = curry((dispatch, state, props, context) => {
-  let ctx = Keeper(context)
-  // how to we avoid this kind of imperative programming, redefining over ctx each time?
-  [ctx, insert] = Keeper.bind(dispatch, [{type: 'insert'}], ctx)
-
-  const getChildEffects = (item) =>
-    childDispatch = ctx.call(toChild, [dispatch, item.id])
-    childContext = ctx.child(item.state)
-    childEffects = ctx.call(kind.declare, [childDispatch, item.state, childContext])
-    childRemove = ctx.bind(toRemove, [dispatch, item.id])
     return {
-      effects: childEffects,
-      remove: childRemove
-    }
-
-  // XXX
-  const childEffects = map(getChildEffects, state.list)
-  const childEffectsWithoutHtml = map(omit(['html']), childEffects)
-  const nonHtmlEffects = concatAllEffects(childEffectsWithoutHtml)
-
-  return merge(nonHtmlEffects, {
-    html:
-      h('div.list-of', [
-        h('button.insert', { onClick: insert }, '+'),
-        state.list.map((item, i) => {
-          return (
-            h('div.item', {key:item.id}, [
-              childEffects[i].html,
-              h('button.remove', { onClick: childEffects[i].remove })
-              }, 'x')
-            ])
-          )
-        })
-      ])
-    })
-})
-
-/*
-this looks like it should work. its a lot of effort though. im not sure
-how efficient lookup will be though. O(n a), n: number of items, a: number of arguments.
-thats not so good. 50 items willhave  4*50*3 = 600. Thats a lot of overhead. And its probably
-not the performance bottleneck of the application...
-
-How does react do it? Aren't we duplicating functionality here? Can't we piggyback on React's
-props/state diffing strategy?
-
-The main difference is that React uses React.createElement(Elm, props) as opposed to the
-function Elm(props). Calling the functions is done at the time of the diff! To get better
-performance, there needs to be some way we can specify the structure of how we call functions
-declaratively just like react.
-
-React decides when to compute the next step... I just implemented an imperative version of that
-with Context.
-
-
-
-
-*/
-
-
-// What if performace optimization was an effects transformation?
-
-// lets also suppose we join rahter than concat effects together so performance extends
-// other services...
-const declare = curry((dispatch, state, props) => {
-  let ctx = Keeper(context)
-  // how to we avoid this kind of imperative programming, redefining over ctx each time?
-  [ctx, insert] = Keeper.bind(dispatch, [{type: 'insert'}], ctx)
-
-  const getChildEffects = (item) =>
-    childDispatch = ctx.call(toChild, [dispatch, item.id])
-    childContext = ctx.child(item.state)
-    childEffects = ctx.call(kind.declare, [childDispatch, item.state, childContext])
-    childRemove = ctx.bind(toRemove, [dispatch, item.id])
-    return {
-      effects: childEffects,
-      remove: childRemove
-    }
-
-  // XXX
-  const childEffects = map(getChildEffects, state.list)
-  const childEffectsWithoutHtml = map(omit(['html']), childEffects)
-  const nonHtmlEffects = concatAllEffects(childEffectsWithoutHtml)
-
-  return merge(nonHtmlEffects, {
-    optimize: {
-      html:
-        h('div.list-of', [
-          h('button.insert', { onClick: insert }, '+'),
-          state.list.map((item, i) => {
-            return (
-              h('div.item', {key:item.id}, [
-                childEffects[i].html,
-                h('button.remove', { onClick: childEffects[i].remove })
-                }, 'x')
-              ])
-            )
-          })
-        ])
-      })
+      html$: lift(combineHtml, effects0.html$, effects1.html$)
     }
   }
 }
 
 
-// Moral of the story so far. Optimizing functional code for performance is 100% possible.
-// Its pretty difficult for figure out right now though. You cna just tell that this should
-// all be made realyl easy somehow. Referential lookup shouldnt be hard. we could hash the
-// the pointer addresses or something in C. But creating a lazy stucture... Then it gets parsed
-// my the optimizer, then every other service as well. Thats too much.
+// So thats interesting. Its a bit cleaner. A majority of the code is just
+// squeezing states and actions together and then separating them apart again.
+
+// pros:
+// - if we use referential equality to dedupe the states of each counter as we
+//   map to each sub-state, then we wont unnecessarily recompute the declare
+//   function for counters that havent changed. but it seems like we should be
+//   able to get that benefit without deduping -- we should be able to get the
+//   already deduped stream by simply never lifting the states togethre to begin
+//   with.
+//
+// cons:
+// - theres a ton of boilerplate / plumbing here.
+// - we're not lazily evaluating declare -- we're just deduping. This means that
+//   services still need to deal with the entire data structure rather than lazily
+//   evaluating the data structure.
+// - its hard to imagine using this pattern for a dynamically allocated listOf. We'd
+//   need to deal with a stream of streams to do that and likely some other madness
+//   as well
 
 
 
+// clojure does something similar. they use static methods for graphql fragments.
+// and build queries in a similar way. they also use query params and have a similar
+// thing going to relay in that regard. using macros, I believe, they're able to
+// determine what components need what updates for performance.
 
 
-// ---
 
-const declare = curry((dispatch, state) => {
-  const childDispatch = id => action => dispatch({type: 'child_action', action, id})
-  const getChildEffects = (item) => kind.declare(childDispatch(item.id), item.state)
-  const childEffects = map(getChildEffects, state.list)
-  const childEffectsWithoutHtml = map(omit(['html']), childEffects)
-  const nonHtmlEffects = concatAllEffects(childEffectsWithoutHtml)
+// so what if we took a whole new fresh look at this. we want laziness. so why don't
+// we just pass the streams themselves! they're lazy right? Then we'll let the service
+// deal with observing those streams. we'll also create some helper functions to hide
+// all the mess when it comes time.
 
-  return merge(nonHtmlEffects, {
-    html:
-      h('div.list-of', [
-        h('button.insert', {
-          onClick: () => dispatch({type: 'insert'})
-        }, '+'),
-        state.list.map((item, i) => {
-          return (
-            h('div.item', {key:item.id}, [
-              childEffects[i].html,
-              h('button.remove', {
-                onClick: () => dispatch({type: 'remove', id: item.id})
-              }, 'x')
-            ])
-          )
-        })
+// so the thinking here is that we have a top-level state stream that has some
+// datastructure that with streams inside of it. and if you evaluate the streams
+// all the way down, you end up with the current state, but the states are lazy
+// and isolated which gives us performance gains. pretty neat. its like a lazy
+// cursor. no need to recompute the cursor if we dont care, right?
+
+
+// just some more random thinking:
+// the issue here is that we have to parse through this entire data structure on every
+// tick. this can become quite expensive in a gigantic app because theres no encapsulation.
+// we want to have the single atom state, but we want encapculation. this is a hard nut to
+// crack and the answer is laziness. we shouldnt be recomputing the entire atom every time
+// if we dont have to. if only one part of the state changes, we should only have to recompute
+// what has changed. The React way of dealing with laziness is with React.createElement which
+// lets the reconciler diff props, etc. But this isn't quite as good as it gets. If those
+// elements were streams and we could simply map over them to proactively get updates to
+// only that point in the tree, then I think thats how we ought to do it.
+
+const counter = {
+  // update takes in an action stream, initialized a state stream,
+  // and wires up that state stream to get updated with actions.
+  update: (action$) => {
+    const state$ = stream(0)
+    return scan(add, state$, action$)
+  },
+  // the declare funciton takes a dispatch stream and a state stream
+  // and it creates an object of streams that get wired to side-effect
+  // services. the one thing thats weird about this is how the dispatch$
+  // is meant to be a dump for sideffects
+  declare: (dispatch$, state$) => {
+    const view = ({inc, dec}) => (state) => {
+      return h('div', [
+        h('button', {onClick: dec}, '-'),
+        h('span', state),
+        h('button', {onClick: inc}, '+')
       ])
-  })
-})
-
-
-const listOf = component({
-  init: () => {},
-  update: () => {},
-  declare: (dispatch, state) => {
-
-  }
-}, [])
-
-
-component = (children) => {
-  declare = (dispatch, state, props) => {
-    return {
-      html: () => {
-        h(),
+    }
+    const declare = (dispatch$, state$) => {
+      const inc = () => dispatch$(+1)
+      const dec = () => dispatch$(-1)
+      return {
+        html$: map(view({inc, dec}), state$)
       }
     }
   }
 }
+
+
+// So Cycle.js is looking more and more interesting each time I look at it.
+// I've been growing closer and closer with elmish. One of the big differences
+// is the way that services seems to work -- in elmish, you bind the callbacks
+// directly to the datastructure whereas in Cycle.js you request those callbacks
+// on the other side... kinda weird to me.
+//
+// - more effort goes into the services for selecting sources and then dealing with
+//   isolating everything -- why not just bind callbacks explicitly. Then in elm,
+//   you'd deal with isoluation by mapping and filtering over the actions and states.
+
+
+
+
+const pairOf = (kind) => ({
+  update: (action$) => {
+    const reducer = (state, action) => {
+      // the state and the action are just pairs of streams!
+      // hopefully that doesnt bite me in the ass later
+      return [
+        kind.update(state[0], action[0]),
+        kind.update(state[1], action[1])
+      ]
+    }
+
+    return scan(reducer, state$, action$)
+  }
+})
+
+
+
+// just read about Cycle.js and "isoluation" so lets try to think more along those lines
+// but the main difference here is we're going to try to use bound callbacks.
+
+const counter = (props$) => {
+  const action$ = stream()
+  const state$ = scan(add, stream(0), action$)
+  const inc = () => action$(+1)
+  const dec = () => action$(-1)
+  const view = (props, state) => {
+    return h('div', [
+      h('button', {onClick: dec}, '-'),
+      h('span', state),
+      h('button', {onClick: inc}, '+')
+    ])
+  }
+  return {
+    html$: list(view, props$, state$),
+    count$: state$
+  }
+}
+
+// So this is interesting. encapulation happens all within the component.
+// the only thing I don't like about this is that we dont have a single atom
+// state anymore so we dont have good insight into the program. we dont get
+// time-travel or any of that.
+// Comparison
+// - elmish
+//   + more performant
+//   + less boilerplate
+//   + encapsulation
+//   - no time travel
+// - cycle
+//   + less boilerplate
+//   + works with react
+//   + simpler drivers
+//   + encapsulation
+
+// i like where this is going here. that counter is the fundamental building
+// block. components are functions with streams. the perks of streams is that
+// we can scan over them to create state. I like this a lot. we can wrap the
+// html$ into a react component even to make react happy so it can lazily
+// evaluate within its own ecosystem. pretty neat. maybe one day it will support
+// streams!
+
+// ok, now lets build a listOf component
+
+const listOf = (kind) => (props$) => {
+  const action$ = stream()
+  const init = {id: 0, sinks:[]}
+  const update = (state, action) => {
+    switch (action.type) {
+      case 'insert':
+        return evolve({
+          nextId: inc,
+          sinks: append({id:state.nextId, sink:kind()})
+        }, state)
+      case: 'remove':
+        return evolve({
+          state: filter(propNeq('id', action.id))
+        }, state)
+      default:
+        return state
+    }
+  }
+  const state$ = scan(update, init, action$)
+  const insert = () => action$({type:'insert'})
+  // we could create a stream hear to map over state and make sure to maintain
+  // proper references to remove functions. it would be a pain, but i think there's
+  // probably no other way. luckily, we probably only ever have to do this once.
+  const remove = (id) => () => action$({type:'remove', id})
+  const viewItem = (sink, i) => {
+    return h('div', [
+      sink.html$, // wrap this in a react component
+      h('button', {onClick: remove}, '-')
+    ])
+  }
+  const view = (props, state) => {
+    return h('div', props, [
+      h('button', {onClick: insert}, '+'),
+      map(viewItem, state.sinks)
+    ])
+  }
+  return {
+    html$: list(view, props$, state$),
+    count$: state$
+  }
+}
+
+// so this is basically it. we could create a react component to handle the whole
+// function binding stuff to be optimially efficient. but lets leacethat for later.
+// in concept everything is right here. pretty much the only reason I dont like this
+// method is we dont get time-travel. perhaps we ought to think about breaking up
+// this one function into larger pieces. that way, we'd have more fine-grained control
+// over the state and hopefully time tracel. one thing to keep in mind as well is how
+// to communicate information to the parent. I like how to can pass the count stream
+// to the parent by returning it -- I think thats a healthy way of doing it. input,
+// to output. there are no callback functions as prop. props are commands and we return
+// responses. in the context of a tabvc: we can filter the props stream for which page
+// to be on, and we can merge that with any streams returned by the views trying to
+// control the page. boom. easy. this also makes me think, we might find ourselves
+// filtering props and then deduping. but maybe it would be better if each prop was
+// its own stream and we lift them together manually. then we wouldnt have to dedupe.
+// sounds good to me!
+//
+// - break up into mutliple functions so we can control state
+// - create helper functions to put it all together
+// - props as individual streams with those helper functions as well
+
+
+const component = (spec) => (prop$s) => {
+  const action$ = stream()
+  const state$ = scan(spec.update, spec.init(), action$)
+  const effect$s = spec.declare(prop$s, state$, action$)
+  return effect$s
+}
+
+// REPEAT from earlier
+const counter = (props$) => {
+  const action$ = stream()
+  const state$ = scan(add, stream(0), action$)
+  const inc = () => action$(+1)
+  const dec = () => action$(-1)
+  const view = (props, state) => {
+    return h('div', [
+      h('button', {onClick: dec}, '-'),
+      h('span', state),
+      h('button', {onClick: inc}, '+')
+    ])
+  }
+  return {
+    html$: lift(view, props$, state$),
+    count$: state$
+  }
+}
+
+
+const something = (prop$s, ) => {
+
+  return {
+    html$: stream(),
+    request$s: {
+      user: stream()
+    }
+  }
+}
+
+
+// what is we went in the direction of Om next and treated the entire
+// application state like Datascript. We just map and filter and compose
+// our queries into that state. Whoa. This is a cool idea! Fuck trees!
+// And honestly, we dont really even need graphs either. Just filtering
+// streams and composing functions!
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
