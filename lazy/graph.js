@@ -28,7 +28,7 @@ link = {}
 
 // WITHOUT NAMED CHILDREN, WE CANT SPECIFY PROPER PATHS!
 // react does exactly have this issue because they arent specifying paths.
-// 
+//
 
 // we need...
 // - values as leaf nodes
@@ -36,7 +36,7 @@ link = {}
 // - to handle abritrary "names"
 //   that way we can pass components into the name for react hyperscript
 // - handle arbirary children as an array
-//   so we can be compatible with react 
+//   so we can be compatible with react
 // - simple function for quering the path
 
 
@@ -72,8 +72,8 @@ g('root', [
   ])
 ])
 
-// so nodes have a name, some properties/value, and children. 
-// a node can also simply be a value. 
+// so nodes have a name, some properties/value, and children.
+// a node can also simply be a value.
 
 // QUESTION: are props necessarily and object? are children ever a list and not named?
 
@@ -87,3 +87,32 @@ g('div.class', {style:{display:'none'}}, [
 
 // QUESTION: how does React represent this graph? What happened when you map over something
 // vs what happens when you have structural repetition like we have here?
+
+// in react, children is a prop!
+
+// children are kept in an array. using keys only makes the diff more efficient especally with large arrays
+// using R.equals, we can do the deep comparison and using thunks, limit the depth we need to go to!
+
+
+// according to react
+// - children can be another node, list of nodes, or a value
+// - {type, key, props: {children, ...}}
+
+// according to graphql
+// - children are all named in an object
+// - chidren can't be values, only empty objects
+// - {fields: {name: {params, fields: { ... }}}}
+
+// type = name
+// params = props
+// fields = children
+
+// so this is inevitably a little messy here. we could just use our own
+// hyperscript helpers for each I suppose, theres nothing wrong with that
+// i suppose. I was really hoping for some universal format. But at least
+// we've come up with a universal way of building these things!
+
+// so maybe out database/cache could be constructed similarly to the graphql thing.
+// at the end of the day we need to come up with our own custom schemes for what the
+// hyperscript translates to.
+
