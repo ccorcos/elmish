@@ -269,38 +269,39 @@ schema = {
 // and we can parse it out into react!
 const s = q
 
+// here, we're defining a graph via defining a tree with identity functions that
+// are paths through the tree all over again. when parsing through this graph, 
+// its important that we only ever lazily evaluate paths and properties because
+// there can definitely be circular dependencies like people who are friends with
+// each other.
 schema = s([
   s('chatroom', [
     'id',
     'name',
     s('messages', {
-      join: {
-        this: 'id',
-        those: ['message', 'chatroom_id']
-      }
+      // this is a message, indexed by id, with the following id.
+      // we're defining a path in the normalized cache
+      identity: ({id}) => ['message', 'id', id]
     }),
   ]),
   s('message', [
     'id',
     'text',
-    'author_id',
-    'chatroom_id',
     s('author', {
-      join: {
-        this: 'author_id',
-        that: ['user', 'id']
-      }
+      // lets index users by name just for fun
+      identity: ({name}) => ['user', 'name', name]
     }),
     s('chatroom', {
-      join: {
-        this: 'chatroom_id',
-        that: ['chatroom', 'id']
-      }
+      identity: ({id}) => ['chatroom', 'id', id]
     })
+  ]),
+  s('user', [
+    'id',
+    'name'
   ])
 ])
 
-// highly unnormalized
+// here is some highly unnormalized data
 data = [
   {id: 0, name: 'meteor', messages: [{id: 0, text: 'meteor.js is cool!', author: {id: 0, name: 'Chet'}},
                                      {id: 1, text: 'yeah, I just check out meteor the other day', author: {id: 1, name: 'Jan'}},
@@ -317,20 +318,54 @@ data = [
   {id: 8, name: 'graphql', messages: []},
 ]
 
+// we should be able to define data sources along with their types, so that we can get data from an 
+// existing api into our caching system.
 
-// now we shuld be able to use a graphql query system along with the schema to normalize this data.
-data_type = [q('chatroom', [
-  'id',
-  'name',
-  q('messages', [
-    'id',
-    'text',
-    q('author', [
-      'id',
-      'name'
+external = {
+  chatrooms: {
+    fetch: () => {data},
+    // we define the schema as a tree as well so we know how
+    // to parse the data into the cache. we use the special '$hash' and '$array' for
+    // using the graph schema to destructure the query properly, and then we can directly
+    // reference the schema for each type!
+    schema: () => g('$hash', [
+      g('data', [
+        g('$array', [
+          schema.chatroom
+        ])
+      ])
     ])
-  ])
-])]
+  },
+  user: {
+    fetch: (id) => ({data: {users: {[id]:{0: {id: 0, name: 'Chet'}, 1: {id: 1, name: 'Jan'}, 2: {id: 2, name: 'Brett'}}[id]}}})
+    // maybe we can come up with a $hash with a path shortand because this is ugly, but
+    // its possible that you want to use different keys for different things, so lets be more 
+    // generic this way.
+    schema: () => g('$hash', [
+      g('data', [
+        g('$hash', [
+          g('users', [
+            g('$hash', [
+              g(id, [
+                scehma.user
+              ])
+            ])
+          ])
+        ])
+      ])
+    ])
+  }
+}
+
+// so this is really cool. before moving forward though, we need to think about one thing. we're requiring
+// all edges of the graph to be names without naming collisions. this means that this graph format is not
+// compatible with react-hyperscript because there may be multiple children and those children may have 
+// the same node name, such as multiple h('span') or h('div') elements. react solves this by requiring a key
+// prop when the elements are not positionally placed so we can do an efficient diff of the graph.
+
+
+
+
 
 
 // there should be normalized data and flattened data. normalized has links
@@ -350,12 +385,15 @@ flattened_data = {
 }
 
 
-// HERE. how do we expres paths? arrays, filesystem paths, stringify json?
-// how do we chose how we index?
+// so we have a schema. we need to be able to define a request and schema of the returned values of that request
 
 
 
 
+
+function flatten(schema, data) => {
+
+}
 
 
 
@@ -388,7 +426,19 @@ function normalize(schema, data_type, data) {
 
 
 
-
+// now we shuld be able to use a graphql query system along with the schema to normalize this data.
+data_type = [q('chatroom', [
+  'id',
+  'name',
+  q('messages', [
+    'id',
+    'text',
+    q('author', [
+      'id',
+      'name'
+    ])
+  ])
+])]
 
 
 
