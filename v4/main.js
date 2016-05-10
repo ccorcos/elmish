@@ -16,11 +16,43 @@ import flyd from 'flyd'
 //   - all data structures should work just like react, a lazy tree
 
 
+// every declarative effect must return a lazy tree
 
+
+const LazyReact = React.createClass({
+  shouldComponentUpdate(nextProps, nextState) {
+    return !R.equals(this.props, nextProps) // || !R.equals(this.state, nextState)
+  },
+  render() {
+    return R.apply(this.props.view, this.props.args)
+  }
+})
+
+const viewbind = (view, ...args) => {
+  return h(LazyReact, {view, args})
+}
+
+const lifters = {
+  init: (obj) => () => R.map((c) => c.init(), obj),
+  update: (obj) => route(R.map(c) => c.update, obj),
+  render: (obj) => (d,s,p) => {
+    return h('span.lift', R.map(name => {
+      return viewbind(obj[name].render, forward(d, name), s[name], p[name] || p || {}),
+    }, R.keys(obj)))
+  },
+  hotkeys: (obj) => (d,s,p) => {
+    return R.map(name => {
+      return bind(obj[name].hoykeys, forward(d, name), s[name], p[name] || p || {})
+    }, R.keys(obj))
+  },
+}
 
 const counter = {
+  // init :: () -> state
   init: () => 0,
+  // update :: state -> action -> state
   update: (s,a) => s+a,
+  // effect :: dispatch -> state -> props -> tree
   render: (d,s,p) => {
     return h('div.counter', [
       h('button.dec', {onClick: bind(d, -p.step)}, '-'),
@@ -35,6 +67,7 @@ const counter = {
     }
   }
 }
+
 
 
 
@@ -90,18 +123,7 @@ const app = e.component({
 
 
 
-const LazyReact = React.createClass({
-  shouldComponentUpdate(nextProps, nextState) {
-    return !R.equals(this.props, nextProps) // || !R.equals(this.state, nextState)
-  },
-  render() {
-    return R.apply(this.props.view, this.props.args)
-  }
-})
 
-const viewbind = (view, ...args) => {
-  return h(LazyReact, {view, args})
-}
 
 const counter = {
   init: () => 1,
