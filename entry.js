@@ -15,4 +15,7 @@
 // import 'elmish/examples/routing/main.js'
 // import 'elmish/examples/animation/main.js'
 // import 'elmish/examples/tabvc/main.js'
-import 'elmish/v4/main.js'
+// import 'elmish/v4/main.js'
+
+
+import 'elmish/v5/main2.js'
