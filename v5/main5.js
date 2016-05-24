@@ -40,6 +40,7 @@ TODO:
 - create a hotkeys service
 
 - performance and laziness middleware
+  - focus (lens) for publication reading
 - how to handle lazy trees in services
 
 - extrapolate into a modal window
@@ -60,25 +61,58 @@ import h from 'react-hyperscript'
 
 const log = x => y => console.log(x, y)
 
+// Z is going to be the namespace for all the function laziness helpers
+const Z = {
+  // partially apply a function with some arguments with a .equals function for comparison.
+  partial: (fn, ...args) => {
+    let _fn = (...more) => {
+      return R.apply(fn, R.concat(args, more))
+    }
+    _fn.fn = fn
+    _fn.args = args
+    _fn.equals = (fn2) => {
+      return R.equals(fn2.fn, _fn.fn) &&
+             R.equals(fn2.args, _fn.args)
+    }
+    return _fn
+  },
+  // use array of functions so we can partially apply
+  _pipe: (fnList, ...args) => {
+    const head = R.head(fnList)
+    const tail = R.tail(fnList)
+    const applyFn = (arg, fn) => fn(arg)
+    return R.reduce(applyFn, head(...args), tail)
+  },
+  // partial application helper
+  pipe: (fnList) => {
+    return Z.partial(Z._pipe, fnList)
+  }
+}
+
 const elmish = (services) => ({
   creator: (transforms) => (component) => {
-    return transforms.reduce((x, tx) => tx(x), component)
+    const applyServices = (fn) => fn(services)
+    const applyTransform = (x, fn) => fn(x)
+    return R.pipe(
+      R.map(applyServices),
+      R.reduce(applyTransform, component)
+    )(transforms)
   },
   start: (app) => {
     const action$ = flyd.stream()
     flyd.map(log('action'), action$)
-    const state$ = flyd.scan(app.update, app.init(), action$)
+    const state$ = flyd.scan(R.flip(app.update), app.init(), action$)
     // no we'll connect to each service
     const stateAndPub$ = flyd.map(state => {
       return {
         state,
-        pub: app.publish(state, action$)
+        pub: app.publish(action$, state)
       }
     }, state$)
     flyd.map(log('state + pub'), stateAndPub$)
     Object.keys(services).map(name => {
       const declare$ = flyd.map(({state, pub}) => {
-        return R.curry(app[name])(state, action$, pub)
+        return R.curry(app[name])(action$, state, pub)
       }, stateAndPub$)
       // RUN SIDE-EFFECTS!!!
       services[name].driver(declare$)
@@ -89,50 +123,99 @@ const elmish = (services) => ({
 const root = document.getElementById('root')
 
 const services = {
-  view: {
+  react: {
     driver: (view$) => {
       flyd.on(view => ReactDOM.render(view, root), view$)
     },
   },
 }
 
+const createAction = (type, payload) => {
+  return { type, payload }
+}
+
+const transforms = {
+  action: (services) => (spec) => {
+    // actions take a specific format: {type, payload}
+    // the type is destructured in your update function
+    // update :: { type: (state, payload) => state }
+    // actions are automatically partially applied to dispatch
+    // actions :: { type: (...args) => payload }
+    // effect :: (actions, state, pub, ...props) => effect
+    // transform every effectful service function to use actions
+    const effectTransform = (effect) => (dispatch, state, pub, ...props) => {
+      // for each action, assign a type and the result to the payload
+      const actions = R.mapObjIndexed((fn, type) => {
+        // maintain value equality for the same dispatch function.
+        return Z.pipe([
+          fn,
+          Z.partial(createAction, type),
+          dispatch
+        ])
+      }, spec.actions)
+      // call the developer-defined effect function with bound actions
+      return effect(actions, state, pub, ...props)
+    }
+    // transform the update function to use { type, payload } actions and destructuring
+    const updateTransform = (types) => (action, state) => {
+      const handler = types[action.type]
+      if (!handler) {
+        throw new TypeError(`Unknown action type ${action.type} for handlers ${Object.keys(types).join(', ')}.`)
+      }
+      return handler(state, action.payload)
+    }
+    // update the component spec
+    const evolution = R.merge(
+      R.map(R.always(effectTransform), services),
+      { update: updateTransform }
+    )
+    return R.evolve(evolution, spec)
+  },
+  curry: (services) => (spec) => {
+    return R.evolve({ update: R.curry }, spec)
+  }
+}
+
 // middleware:
-// - update routing
-// - action creator
 // - lazy react components
 // - static lift
 
 
-const {creator, start} = elmish(services)
-const create = creator([])
+const {creator, start} = elmish({
+  view: services.react,
+})
+
+const create = creator([
+  transforms.action,
+  transforms.curry,
+])
+
+const noop = () => {}
+const id = x => x
 
 const counter = create({
   init: () => {
     return { count: 0 }
   },
-  update: (state, action) => {
-    switch (action.type) {
-      case 'increment':
-        return { count: state.count + 1 }
-      case 'decrement':
-        return { count: state.count - 1 }
-      default:
-        throw TypeError('Unknown action', action)
-    }
+  update: {
+    inc: R.evolve({ count: R.inc }),
+    dec: R.evolve({ count: R.dec }),
   },
-  view: (state, dispatch) => {
-    const inc = () => dispatch({ type: 'increment' })
-    const dec = () => dispatch({ type: 'decrement' })
+  actions: {
+    // no payloads
+    inc: noop,
+    dec: noop,
+  },
+  view: (action, state, pub) => {
     return h('div.counter', [
-      h('button.dec', {onClick: dec}, '-'),
+      h('button.dec', {onClick: action.dec}, '-'),
       h('span.count', {}, state.count),
-      h('button.inc', {onClick: inc}, '+')
+      h('button.inc', {onClick: action.inc}, '+')
     ])
   },
 })
 
-// could use creator middleware for this as well!
-const forward = (dispatch, type) => (action) => dispatch({type, action})
+
 
 const counters = create({
   init: () => {
@@ -141,15 +224,7 @@ const counters = create({
       weight: counter.init(),
     }
   },
-  // publish stats so other components can access this data
-  // in a formatted manner. its really just a different view of state thats
-  // more global. that way you can change your component heirarchy and state
-  // structure without losing the publish/subscribe links
-  publish: (state, dispatch) => {
-    // we dont care to publish any of the counter publications. in this way
-    // we're able to scope publications. We could even filter publications
-    // and restructure if we wanted to. we could also publish something like
-    // a modal view as well!
+  publish: (dispatch, state) => {
     return {
       stats: {
         height: state.height.count,
@@ -157,68 +232,47 @@ const counters = create({
       }
     }
   },
-  update: (state, action) => {
-    switch (action.type) {
-      case 'height':
-        return R.evolve({
-          height: R.curry(counter.update)(R.__, action.action)
-        }, state)
-      case 'weight':
-        return R.evolve({
-          weight: R.curry(counter.update)(R.__, action.action)
-        }, state)
-      default:
-        throw TypeError('Unknown action', action)
-    }
+  update: {
+    height: (state, action) => R.evolve({
+      height: counter.update(action),
+    }, state),
+    weight: (state, action) => R.evolve({
+      weight: counter.update(action),
+    }, state),
   },
-  view: (state, dispatch, pub) => {
+  actions: {
+    height: id,
+    weight: id,
+  },
+  view: (actions, state, pub) => {
     return h('div.counters', [
       h('div.height', [
-        counter.view(state.height, forward(dispatch, 'height'))
+        counter.view(actions.height, state.height)
       ]),
       h('div.weight', [
-        counter.view(state.weight, forward(dispatch, 'weight'))
+        counter.view(actions.weight, state.weight)
       ]),
     ])
   }
 })
 
-const bmi = create({
-  init: () => {},
-  update: (s,a) => {},
-  view: (state, dispatch, pub) => {
-    return h('span.bmi', [
-      'BMI:', pub.stats.height * pub.stats.weight
-    ])
-  }
-})
+// stateless component
+const bmi = (pub) => {
+  return h('span.bmi', [
+    'BMI:', pub.stats.height * pub.stats.weight
+  ])
+}
 
-const app = create({
-  init: () => {
-    return {
-      counters: counters.init(),
-    }
-  },
-  publish: (state, dispatch) => {
-    return counters.publish(state.counters, forward(dispatch, 'counters'))
-  },
-  update: (state, action) => {
-    switch (action.type) {
-      case 'counters':
-        return R.evolve({
-          counters: R.curry(counters.update)(R.__, action.action)
-        }, state)
-      default:
-        throw TypeError('Unknown action', action)
-    }
-  },
-  view: (state, dispatch, pub) => {
+// the app gets the same state as the counter, but we want to also
+// show the bmi calculation in there too
+const app = R.evolve({
+  view: (view) => (d, s, p, ...a) => {
     return h('div.app', [
-      counters.view(state.counters, forward(dispatch, 'counters'), pub),
-      bmi.view(null, null, pub),
+      view(d, s, p, ...a),
+      bmi(p),
     ])
   }
-})
+}, counters)
 
 // turn everything on!
 start(app)

@@ -18,4 +18,4 @@
 // import 'elmish/v4/main.js'
 
 
-import 'elmish/v5/main4.js'
+import 'elmish/v5/main5.js'
