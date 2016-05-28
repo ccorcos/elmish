@@ -1,4 +1,74 @@
-## To Do (Fun)
+## To Do
+
+better middleware:
+- dynamic lift - derive types based on state
+- lazy react components
+- merge and compose publication lenses
+- performance?
+
+- giphy example
+- listOf example
+- undoable example
+
+- graphql for data fetching
+- use relay / apollo as a service
+- record and publish state
+  - help form
+  - user tracking
+  - time-travel
+    - think about how you can have two components communicate rather easily now
+      you can place the root, which publishes state / hooks, and now you're free
+      to place the slide wherever in the DOM heirarchy.
+
+- immutable.js
+- types?
+- acid tests
+
+standardize type signatures and interfaces
+possibly implement in Elm 0.16?
+
+```js
+type Action = { type, payload }
+type Dispatch = Function
+type Component = {
+  init :: () -> State
+  update :: (Action, State) -> State
+  publish :: (Dispatch, State) -> Publication
+  [declare] :: (Dispatch, State, Publication, Props) -> DDS
+}
+type Service = {
+  connect :: (Stream DDS) -> async IO
+  lift :: ({ name: DDS }) -> DDS
+}
+type Transform = ({ name: Service }, Component) -> Component
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+---
 
 - performance
 - more animation examples:

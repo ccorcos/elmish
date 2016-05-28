@@ -236,10 +236,6 @@ const transforms = {
   }
 }
 
-// middleware:
-// - lazy react components
-// - static lift
-
 
 const {creator, start} = elmish({
   view: services.react,
