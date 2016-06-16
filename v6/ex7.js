@@ -3,6 +3,8 @@
 // should all be done with Elm.
 
 // TODO:
+// - no need for services/creators. should just be able to crawl the static type tree
+// -
 // - schema with lenses.
 // - Z.curry and curried actions and f() is considered f(undefined) so it eats up an arg.
 // - declare multiple effects at once so we dont have to call graphql twice.
