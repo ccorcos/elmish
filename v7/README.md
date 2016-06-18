@@ -35,7 +35,8 @@ const counter = {
 }
 ```
 
-This is fundamentally what a UI component is...
+This is fundamentally what a UI component is. Everything throughout the rest of
+this article is just going to be building on top of this concept.
 
 One code smell is how actions involve string comparison. We can refactor this
 to use a creation function. We can also use Ramda for a nice point-free style
@@ -274,8 +275,8 @@ const dynamicCounter = {
     }
   },
   view: (dispatch, state, props) => {
-    const inc = () => dispatch({type: 'inc', delta: props.delta}),
-    const dec = () => dispatch({type: 'dec', delta: props.delta}),
+    const inc = () => dispatch({type: 'inc', delta: props.delta})
+    const dec = () => dispatch({type: 'dec', delta: props.delta})
     return h('div.counter', [
       h('button.dec', {onClick: dec}, `-${props.delta}`),
       h('span.count', {}, state.count),
@@ -308,8 +309,8 @@ const customCounter = {
     }
   },
   view: (dispatch, state, props) => {
-    const dispatchCount = (action) => dispatch({type: 'count', action}),
-    const dispatchDelta = (action) => dispatch({type: 'delta', action}),
+    const dispatchCount = (action) => dispatch({type: 'count', action})
+    const dispatchDelta = (action) => dispatch({type: 'delta', action})
     return h('div.custom-counter', [
       "Here's your custom counter:",
       dynamicCounter.view(dispatchCount, state.count, {delta: state.delta.count}),
@@ -370,8 +371,8 @@ Now we can just use this lazy function to wrap our view functions!
   // ...
   // dynamicCounter
   view: lazy((dispatch, state, props) => {
-    const inc = () => dispatch({type: 'inc', delta: props.delta}),
-    const dec = () => dispatch({type: 'dec', delta: props.delta}),
+    const inc = () => dispatch({type: 'inc', delta: props.delta})
+    const dec = () => dispatch({type: 'dec', delta: props.delta})
     return h('div.counter', [
       h('button.dec', {onClick: dec}, `-${props.delta}`),
       h('span.count', {}, state.count),
@@ -381,8 +382,8 @@ Now we can just use this lazy function to wrap our view functions!
   // ...
   // customCounter
   view: lazy((dispatch, state, props) => {
-    const dispatchCount = (action) => dispatch({type: 'count', action}),
-    const dispatchDelta = (action) => dispatch({type: 'delta', action}),
+    const dispatchCount = (action) => dispatch({type: 'count', action})
+    const dispatchDelta = (action) => dispatch({type: 'delta', action})
     return h('div.custom-counter', [
       "Here's your custom counter:",
       dynamicCounter.view(dispatchCount, state.count, {delta: state.delta.count}),
@@ -396,10 +397,212 @@ Now we can just use this lazy function to wrap our view functions!
 But we're not quite done. This won't actually work yet because the dispatch
 functions passed down to the dynamicCounter get new references every time.
 
-TODO: efficiently computing these diffs using immutable js
-TODO: issues with dispatch changing reference on every render
+To solve this issue, we essentially need to be able to partially apply a
+function while maintaining a record of the original function and what arguments
+it has been partially applied with so we can compare them. I call this concept
+"partially applied function equality", and its analogous to the concept of
+value-equality for objects.
 
+Here's an example of of a function for partially applying a function with
+arguments, returning a new function that has a `.equals` function for
+value-comparison which Ramda will use.
 
-TODO: other declarative services
-TODO: static schema definition
-TODO: publications
+```js
+export const partial = (fn, ...args) => {
+  let _fn = (...more) => {
+    return R.apply(fn, R.concat(args, more))
+  }
+  _fn.fn = fn
+  _fn.args = args
+  _fn.equals = (fn2) => {
+    return R.equals(fn2.fn, _fn.fn) &&
+           R.equals(fn2.args, _fn.args)
+  }
+  return _fn
+}
+```
+
+Now we can use this to maintain partially applied function equality. For
+example:
+
+```js
+// BEFORE
+const dec = () => dispatch({type: 'dec', delta: props.delta})
+// AFTER
+const dec = partial(dispatch, {type: 'dec', delta: props.delta})
+```
+
+We can also use this partial function to create a function that forwards actions
+while maintaining partially applied function equality.
+
+```js
+const _forward = (dispatch, type, action) => {
+  return dispatch({type, action})
+}
+
+const forward = (dispatch, type) => {
+  return partial(_forward, dispatch, type)
+}
+```
+
+And here's the change result:
+
+```js
+// BEFORE
+const dispatchCount = (action) => dispatch({type: 'count', action})
+// AFTER
+const dispatchCount = forward(dispatch, 'count')
+```
+
+This is all a trade-off though. The deeper you are in your view, the more times
+the dispatch function will have been partially applied, making the comparison
+more and more expensive. So in some circumstances, it may be more performant to
+simply recompute and diff your `counter` component rather than compute the
+value-equality of the dispatch function.
+
+Another performance consideration is immutability. Comparing that state objects
+is very performant when you simply do a referential equality. You can use
+Ramda's functions like `R.merge` and `R.evolve` to immutably update state, but
+in large applications with large states, this can lead to "garbage thrashing".
+In that case, you may find it more performant to use something like ImmutableJS.
+
+Moving on, the next thing I want to talk about are side-effects. Rendering to
+the DOM is a side-effect. Thus, I don't see any reason we shouldn't treat all
+side-effects this exact same way -- by building a lazy tree of declarative data
+structures with callback hooks to asynchronously execute actions.
+
+But first, lets look into more detail how the elmish core works, and how
+rendering works. The ugly way of doing it looks like this:
+
+```js
+const start = ({init, update, view}, node) => {
+  let state = app.init()
+  // when we get an action, we want to update the state and re-render the ui
+  const dispatch = action => {
+    state = app.update(state, action)
+    ReactDOM.render(app.view(dispatch, state), node)
+  }
+  // the initial render
+  ReactDOM.render(app.view(dispatch, state), node)
+}
+const root = document.getElementById('root')
+start(customCounter, root)
+```
+
+But using a simple streams library like flyd, we can write it much cleaner:
+
+```js
+const start = ({init, update, view}, node) => {
+  const action$ = flyd.stream()
+  const state$ = flyd.scan(app.update, app.init(), action$)
+  // handle rendering side-effect
+  const vdom$ = flyd.map(partial(app.view, action$), state$)
+  const render = vdom => ReactDOM.render(vdom, node)
+  flyd.on(render, vdom$)
+}
+```
+
+Now what if we could handle all side-effects the same way? We might handle http
+side-effects like this:
+
+```js
+const start = ({init, update, view}, node) => {
+  const action$ = flyd.stream()
+  const state$ = flyd.scan(app.update, app.init(), action$)
+  // handle rendering side-effect
+  const vdom$ = flyd.map(partial(app.view, action$), state$)
+  const render = vdom => ReactDOM.render(vdom, node)
+  flyd.on(render, vdom$)
+  // handle http side-effect
+  const http$ = flyd.map(partial(app.http, action$), state$)
+  const resolve = http => HTTPCache.resolve(http)
+  flyd.on(resolve, http$)
+}
+```
+
+In this case, `HTTPCache` maintains a mutable state of all requests. It parses
+the declarative lazy tree representation of all the HTTP requests of the app,
+and fires off any requests that aren't already in flight. And when a request
+comes back, HTTPCache will fire the associated callback function.
+
+Here's a component that fetched a random gif from Giphy using this declarative
+HTTP "service".
+
+```js
+const giphy = {
+  init: () => {
+    url: undefined,
+    error: false,
+    loading: true,
+  },
+  update: (state, action) => {
+    switch (action.type) {
+      case 'new':
+        return {
+          url: action.payload.image_url,
+          error: false,
+          loading: false,
+        }
+      case 'error':
+        return {
+          url: undefined,
+          error: true,
+          loading: false,
+        }
+      case 'another':
+        return {
+          url: undefined,
+          error: false,
+          loading: true,
+        }
+      default:
+        throw new TypeError('Unknown action', action)
+    }
+  },
+  view: (dispatch, state) => {
+    const another = partial(dispatch, {type: 'another'})
+    return h('div.giphy', [
+      state.loading ? 'Loading...' :
+        state.error ? 'ERROR' :
+        h('img', {src: state.url}),
+      h('button', {
+        onClick: another, disabled:state.loading
+      }, 'another gif please!')
+    ])
+  },
+  http: (dispatch, state) => {
+    const onSuccess = forward(dispatch, 'new')
+    const onError = partial(dispatch, {type: 'error'})
+    return !state.loading : false :
+      h('http://api.giphy.com/v1/gifs/random?api_key=dc6zaTOxFJmzC&&rating=pg&tag=explosions', {
+        method: 'get',
+        onSuccess,
+        onError
+      })
+  }
+}
+```
+
+Notice how we're using the same exact helper function to generate declarative
+http requests objects as we are to generate virtual dom nodes! That's because
+they're the same exact concept! We're just creating lazy trees, and we're
+offloading all the hard work onto "services" like React to diff the trees and
+handle mutations.
+
+TODO
+- update pairOf function
+- note how this isn't so generalizable because we dont know beforehand what
+  services the subcomponents are going to have. the answer is to be able
+  to statically analyse and parze through the views to grab all relevant info
+- static schema definition
+- dynamic schema as a function of state
+  - listOf function
+  - undoable function
+- helpers for dealing with all the dispatching stuff
+- how to build a the http service
+  - how does the h helper work?
+- motivation for publication concept
+  - lenses and performance
+- graphql higher order component
+- http caching higher order component
+- optimistic updates and fallback
