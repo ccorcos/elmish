@@ -236,8 +236,8 @@ const bothOf = (kind1, kind2) => {
       const dispatch1 = (action) => dispatch({type: 'kind1', action})
       const dispatch2 = (action) => dispatch({type: 'kind2', action})
       return h('div.pair', [
-        kind.view1(dispatchCounter1, state.kind1),
-        kind.view2(dispatchCounter2, state.kind2),
+        kind1.view(dispatch1, state.kind1),
+        kind2.view(dispatch2, state.kind2),
       ])
     }
   }
@@ -588,6 +588,233 @@ http requests objects as we are to generate virtual dom nodes! That's because
 they're the same exact concept! We're just creating lazy trees, and we're
 offloading all the hard work onto "services" like React to diff the trees and
 handle mutations.
+
+Now lets see how this changes our "bothOf" function:
+
+```js
+const bothOf = (kind1, kind2) => {
+  return {
+    // ...
+    http: (dispatch, state) => {
+      const dispatch1 = (action) => dispatch({type: 'kind1', action})
+      const dispatch2 = (action) => dispatch({type: 'kind2', action})
+      return h([
+        kind1.http(dispatch1, state.kind1),
+        kind2.http(dispatch2, state.kind2),
+      ])
+    },
+    // ...
+  }
+}
+
+const doubleGiphy = bothOf(giphy, giphy)
+```
+
+All we did here was create a lazy node that references two other lazy nodes, one
+for each child. Then we used `bothOf` two create a double-giphy component for
+twice the amount of entertainment.
+
+Another side-effect we might be interested in is hotkeys -- so we can bind
+keystrokes to actions in our components. For example, maybe we want the spacebar
+to trigger another gif.
+
+```js
+const giphy = {
+  // ...
+  hotkeys: (dispatch, state) => {
+    const another = partial(dispatch, {type: 'another'})
+    return h({
+      space: another
+    })
+  },
+  // ...
+}
+```
+
+The problem we're starting to run into now is that every time we want to create
+a new side-effect service, we need to rewire our entire app. That is, I need to
+add a hotkeys function to `bothOf` if any of its children want to use that
+service. That makes it really hard to make a generic / generalizable component
+since we don't know beforehand what services a components child are going to use
+and how to join them in a reasonable way.
+
+Thus, we introduce a concept of a schema to offload all this work on the
+service itself. Lets rewrite the `bothOf` function using a schema. Its actually
+pretty simple.
+
+
+```js
+const bothOf = (kind1, kind2) => {
+  return {
+    schema: {
+      kind1,
+      kind2
+    },
+  }
+}
+```
+
+And now, in the `start` function, we can look at the schema and deduce some sane
+defaults for merging everything together. The following init and update
+functions are literally interred from the schema above.
+
+```js
+  init: () => {
+    kind1: kind1.init(),
+    kind2: kind2.init(),
+  }
+  update: (state, action) => {
+    switch (action.type) {
+      case 'kind1':
+        return {
+          kind1: kind1.update(state.kind1, action.action),
+          kind2: state.kind2,
+        }
+      case 'kind2':
+        return {
+          kind1: state.kind1,
+          kind2: kind2.update(state.kind2, action.action),
+        }
+      default:
+        throw new TypeError('Unknown action', action)
+    }
+  }
+```
+
+And services can define their own default merge strategy. For example, the
+default for a React service is to wrap the child components in a div.
+
+```js
+  view: (dispatch, state) => {
+    const dispatch1 = (action) => dispatch({type: 'kind1', action})
+    const dispatch2 = (action) => dispatch({type: 'kind2', action})
+    return h('div', [
+      kind1.view(dispatch1, state.kind1),
+      kind2.view(dispatch2, state.kind2),
+    ])
+  }
+```
+
+Services are now free to parse through the schema and infer all of this for us
+now that we're defining a static schema. But there are couple hangups we have
+to deal with first.
+
+(1) Sometimes you might want override the default merging functionality. This is
+most frequently the case when you're writing the view function with exotic
+functionality. But you'll rarely find yourself doing this for http requests.
+Here's how we'd rewrite the customCounter.
+
+```js
+const customCounter = {
+  schema: {
+    count: dynamicCounter,
+    delta: dynamicCounter,
+  }
+  view: ({count, delta}, state) => {
+    return h('div.custom-counter', [
+      "Here's your custom counter:",
+      count.view(state.count, {delta: state.delta.count}),
+      'Change the counter delta with this counter:',
+      delta.view(state.delta, {delta: 1}),
+    ])
+  }
+}
+```
+
+Notice that we didn't have to deal with dispatch or partially applied function
+equality at all! Since we know the schema, the `start` function can do all of
+that for you.
+
+No suppose we modify our counter so that we can use the + and - keys to
+increment and decrement the counter.
+
+```js
+const counter = {
+  //...
+  hotkeys: (actions, state) => {
+    return h({
+      '+': actions.inc,
+      '-': actions.dec,
+    })
+  }
+  //...
+}
+```
+
+Cool, but now whenever we press +, both counters increment in our custom counter
+but we don't want the delta counter to increment using hotkeys. So we might
+override the default functionality and only pass on the main counter's hotkeys
+to `start`.
+
+```js
+const customCounter = {
+  // ...
+  hotkeys: ({count, delta}, state) => {
+    return count.hotkeys(state.count)
+  }
+  // ...
+}
+```
+
+Awesome. Now + and - only changes the main counter. We're only beginning to see
+the expressiveness of this pattern.
+
+(2) Sometimes the schema of a component might be dynamic. A perfect example of
+this is the `listOf` component. The `listOf` component creates an arbitrary
+number the same component with buttons to insert and remove items.
+
+```js
+const listOf = (kind) => {
+  return {
+    init: () => {
+      return {
+        nextId: 1,
+        items: [{id:0, state:kind.init()}]
+      }
+    },
+    // XXX use a lens to specify?
+    schema: R.lens(
+      R.evolve({
+        items: R.
+      })
+    )
+  },
+  // XXX
+}
+```
+
+- this is ensuring that in a list of counters, all the hotkeys are merged together
+-
+
+
+- listOf
+- undoable
+  - the easy way
+  - the better way
+
+
+
+An interesting
+that you want to override which component is in control of certain hotkeys
+
+- overriding the defaults
+- dynamic schema
+
+
+
+
+
+Furthermore, that function would look a lot like the http function we
+just made, simply joining the two results into a lazy node on the component
+tree.
+. This isn't very
+convenient, so we're going to need to create a new abstraction
+
+
+to generalize services.
+
+
+
 
 TODO
 - update pairOf function
