@@ -1,3 +1,7 @@
+# TODO
+
+- use objects rather than positional arguments as things start to get more an more complex
+
 # Elmish
 
 A component is just a basic state machine. For example:
@@ -408,7 +412,7 @@ arguments, returning a new function that has a `.equals` function for
 value-comparison which Ramda will use.
 
 ```js
-export const partial = (fn, ...args) => {
+const partial = (fn, ...args) => {
   let _fn = (...more) => {
     return R.apply(fn, R.concat(args, more))
   }
@@ -515,15 +519,15 @@ const start = ({init, update, view}, node) => {
   flyd.on(render, vdom$)
   // handle http side-effect
   const http$ = flyd.map(partial(app.http, action$), state$)
-  const resolve = http => HTTPCache.resolve(http)
+  const resolve = http => HttpService.resolve(http)
   flyd.on(resolve, http$)
 }
 ```
 
-In this case, `HTTPCache` maintains a mutable state of all requests. It parses
+In this case, `HttpService` maintains a mutable state of all requests. It parses
 the declarative lazy tree representation of all the HTTP requests of the app,
 and fires off any requests that aren't already in flight. And when a request
-comes back, HTTPCache will fire the associated callback function.
+comes back, HttpService will fire the associated callback function.
 
 Here's a component that fetched a random gif from Giphy using this declarative
 HTTP "service".
@@ -656,7 +660,7 @@ const bothOf = (kind1, kind2) => {
 
 And now, in the `start` function, we can look at the schema and deduce some sane
 defaults for merging everything together. The following init and update
-functions are literally interred from the schema above.
+functions are interred from the schema above.
 
 ```js
   init: () => {
@@ -725,20 +729,40 @@ Notice that we didn't have to deal with dispatch or partially applied function
 equality at all! Since we know the schema, the `start` function can do all of
 that for you.
 
-No suppose we modify our counter so that we can use the + and - keys to
+Now suppose we modify our counter so that we can use the + and - keys to
 increment and decrement the counter.
 
 ```js
 const counter = {
   //...
-  hotkeys: (actions, state) => {
+  hotkeys: (dispatch, state) => {
     return h({
-      '+': actions.inc,
-      '-': actions.dec,
+      '+': partial(dispatch, {type:'increment'}),
+      '-': partial(dispatch, {type:'decrement'}),
     })
   }
   //...
 }
+```
+
+But now we're creating these actions for each side-effect and dealing with PAFE
+again. We can pretty easily refactor this with a helper function so that we
+don't need to deal with PAFE or duck-typing.
+
+```js
+const counter = helper({
+  update: {
+    increment: (state) => ({count: state.count + 1}),
+    increment: (state) => ({count: state.count - 1}),
+  },
+  view: (actions, state) => {
+    return h('div.counter', [
+      h('button.dec', {onClick: actions.decrement}, '-'),
+      h('span.count', {}, state.count),
+      h('button.inc', {onClick: actions.increment}, '+')
+    ])
+  }
+})
 ```
 
 Cool, but now whenever we press +, both counters increment in our custom counter
@@ -759,9 +783,18 @@ const customCounter = {
 Awesome. Now + and - only changes the main counter. We're only beginning to see
 the expressiveness of this pattern.
 
-(2) Sometimes the schema of a component might be dynamic. A perfect example of
-this is the `listOf` component. The `listOf` component creates an arbitrary
-number the same component with buttons to insert and remove items.
+(2) Some components may have more complicated relationships between the state
+and its subcomponents. Two such examples are the `listOf` higher-order component
+and the `undoable` higher-order component.
+
+The `listOf` component creates an arbitrary list of components along with
+buttons to add and remove components from the list. Thus the schema is no longer
+static, but rather a function of the current state for the component. The data
+structure returned from the schema determines the structure of the children
+object passed into the side-effect functions. We do this by specifying a `Child`
+which is defined by a component type and a lens for querying and mutating state.
+When defining a dynamic schema like this, you need to define the initial state
+yourself.
 
 ```js
 const listOf = (kind) => {
@@ -769,67 +802,162 @@ const listOf = (kind) => {
     init: () => {
       return {
         nextId: 1,
-        items: [{id:0, state:kind.init()}]
+        items: [{
+          id: 0,
+          state: kind.init()
+        }]
       }
     },
-    // XXX use a lens to specify?
-    schema: R.lens(
-      R.evolve({
-        items: R.
-      })
-    )
-  },
-  // XXX
+    schema: (state, tag) => {
+      return {
+        items: state.items.map((item) => {
+          return tag({
+            type: kind,
+            getter: R.pipe(
+              R.prop('items'),
+              R.find(R.propEq('id', item.id)),
+              R.prop('state')
+            ),
+            setter: (v, s) => R.evolve({
+              items: R.updateWhere(R.propEq('id', item.id), v)
+            })(s)
+          })
+        })
+      }
+    },
+    update: {
+      insert: (state) => {
+        return {
+          nextId: state.nextId + 1,
+          items: R.append({
+            id: state.nextId,
+            state: kind.init()
+          }, items)
+        }
+      },
+      remove: (state, id) => {
+        return R.evolve({
+          items: R.filter(R.propNeq('id', id))
+        })
+      }
+    },
+    view: ({items}, {insert, remove}, state) => {
+      return h('div.list-of', [
+        h('button.insert', {onClick: insert}, '+'),
+        state.list.map((item) => {
+          return (
+            h('div.item', {key:item.id}, [
+              item
+              h('button.remove', {onClick: partial(remove, item.id})}, 'x')
+            ])
+          )
+        })
+      ])
+    }
+  }
 }
 ```
 
-- this is ensuring that in a list of counters, all the hotkeys are merged together
--
+Ironically, we didn't really end up writing less code than before. But we didn't
+have to deal with passing child actions through update, and we only has to use
+`partial` in one place where it really makes sense. But the real benefit is that
+we can now parse a static component tree as a function of state. More on this
+later... First, I want to show you another example with `undoable`.
 
+```js
+const undoable = (kind) => {
+  return {
+    init: {
+      list: [kind.init()],
+      time: 0
+    },
+    schema: (state, tag) => {
+      return {
+        child: tag({
+          type: kind,
+          getter: R.pipe(
+            R.prop('list'),
+            R.nth(state.time)
+          ),
+          setter: (v, s) => R.evolve({
+            list: R.update(state.time, v)
+          })(s)
+        })
+      }
+    },
+    update: {
+      undo: evolve({
+        time: R.dec
+      }),
+      redo: evolve({
+        time: R.inc
+      }),
+      child: (state, action) => {
+        const past = take(state.time, state.list)
+        const current = state.list[state.time]
+        const next = kind.update(current, action)
+        return merge(state, {
+          list: concat(past, [current, next]),
+          time: state.time + 1
+        })
+      }
+    },
+    view: ({child}, {undo, redo}, state) => {
+      const canUndo = state.time > 0
+      const canRedo = state.time < state.list.length - 1
+      return h('div', [
+        h('button', {onClick: undo, disabled: !canUndo}, 'undo'),
+        h('button', {onClick: redo, disabled: !canRedo}, 'redo'),
+        child.view()
+      ])
+    }
+  }
+}
+```
 
-- listOf
-- undoable
-  - the easy way
-  - the better way
+The thing about the above example is that focus of the lense changes on every state!
+Pretty interesting... Also, we've overridden the child update function based on the key-value.
 
+Features thus far:
 
-
-An interesting
-that you want to override which component is in control of certain hotkeys
-
-- overriding the defaults
-- dynamic schema
-
-
-
-
-
-Furthermore, that function would look a lot like the http function we
-just made, simply joining the two results into a lazy node on the component
-tree.
-. This isn't very
-convenient, so we're going to need to create a new abstraction
-
-
-to generalize services.
-
-
+- actions, action payloads, action transforms (not actually demonstrated yet, e.g. e.target.value)
+- schemas, PAFE, overriding side-effects and child actions
 
 
 TODO
-- update pairOf function
-- note how this isn't so generalizable because we dont know beforehand what
-  services the subcomponents are going to have. the answer is to be able
-  to statically analyse and parze through the views to grab all relevant info
-- static schema definition
-- dynamic schema as a function of state
-  - listOf function
-  - undoable function
-- helpers for dealing with all the dispatching stuff
 - how to build a the http service
   - how does the h helper work?
 - motivation for publication concept
   - lenses and performance
+  - what about dispatching global actions?
 - graphql higher order component
 - http caching higher order component
 - optimistic updates and fallback
+
+
+```js
+function PAF(f, args...) {
+  this.f = f
+  this.args = args
+}
+
+function mapper(g, f, args) {
+  return g(f(...args))
+}
+
+PAF.prototype.map = function(g) {
+  return new PAF(mapper, g, this.f, this.args)
+}
+
+PAF.prototype.partial = function(more...) {
+  return new PAF(this.f, this.args.concat(more))
+}
+
+PAF.prototype.equals = function(other) {
+  return R.equals(other.f, self.f) && R.equals(other.args, self.args)
+}
+
+PAF.prototype.call = function(more...) {
+  return this.f(...args)
+}
+```
