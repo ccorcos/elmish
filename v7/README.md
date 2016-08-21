@@ -915,7 +915,7 @@ const undoable = (kind) => {
 }
 ```
 
-The thing about the above example is that focus of the lense changes on every state!
+The thing about the above example is that focus of the lens changes on every state!
 Pretty interesting... Also, we've overridden the child update function based on the key-value.
 
 Features thus far:

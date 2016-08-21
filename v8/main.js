@@ -1,12 +1,8 @@
 const R = require('ramda')
+const Z = require('../v6/z')
 
-// TODO:
-// how do subscriptions compose?
-// how to do schema stuff?
-//   - when is an effect overridden or merged?
-//   - when is update overridden or merged?
-//   - how do we deal with listOf and undoable?
-// how to build a service
+// we need to figure this out much slower.
+// lets just do the schema stuff for now.
 
 const counter = {
   init: 0,
@@ -24,56 +20,84 @@ const counter = {
   }
 }
 
-const input = {
-  init: '',
-  update: {
-    // this action has a payload
-    onChange: (state, value) => value
-  },
-  // we can override the update actions and transform the payloads
-  // into serializable data, or simply call functions passed as props.
-  actions: ({onChange}, value, {onSubmit}) => {
-    return {
-      onChange: (e) => onChange(e.target.value),
-      onKeyDown: (e) => e.keyCode === 13 ? onSubmit(value) : undefined
+const bmi = {
+  init: {},
+  // schema can be a function of state
+  children: {
+    // key is the name of the children
+    height: {
+      type: counter,
+      // lens is for getting and setting the child state
+      setter: R.assoc('height'),
+      getter: R.prop('height')
+    },
+    weight: {
+      type: counter,
+      setter: R.assoc('weight'),
+      getter: R.prop('weight')
     }
   },
-  view: ({onKeyDown, onChange}, value) => {
-    return h('input', {onChange, value, onKeyDown})
-  }
-}
-
-// this component doesnt even have a view, but publishes data with hooks
-// into its own actions!
-const health = {
-  init: 100,
-  update: {
-    heal: (state, amount) => Math.min(state + amount, 100)
-    hurt: (state, amount) => Math.max(state - amount, 0),
-  },
-  publish: ({hurt, heal}, health) => {
-    return {
-      health,
-      hurt,
-      heal
-    }
-  }
-}
-
-// this component has no state, but subscribes to display GAME_OVER when
-// a user's health is 0
-const gameOver = {
-  subscribe: {
-    // XXX probably need something better here so we can compose subscriptions
-    // all the way up to the root for efficient updates
-    health: R.prop('health')
-  },
-  // no actions, no state
-  view: ({health}, {onRestart}) => {
-    return health > 0 ? false : h('div.game-over', [
-      h('h1', 'GAME OVER'),
-      h('button.restart', {onClick: onRestart}, 'try again')
+  // children are passed as first argument
+  view: ({height, weight}, state) => {
+    return h('div.bmi', [
+      height.view(),
+      weight.view(),
+      h('span', state.height * state.weight)
     ])
   }
 }
 
+
+
+// parse through children to generate initial values
+const makeInitialState = (type) => {
+  if (type.children) {
+    return R.reduce((state, child) => {
+      const childState = makeInitialState(child.type)
+      return child.setter(childState, state)
+    }, state, R.values(type.children))
+  } else {
+    return type.init
+  }
+}
+
+// create updates for children
+const makeChildrenUpdate = (type) => {
+  if (type.children) {
+    return R.map((child) => {
+      return makeUpdate(child.type)
+    }, type.children)
+  } else {
+    return {}
+  }
+}
+
+// merge local updates with children updates and convert into a reducer
+const makeUpdate = (type) => {
+  const childrenUpdate = makeChildrenUpdate(type)
+  const localUpdate = type.update || {}
+  const updates = R.merge(localUpdate, childrenUpdate)
+  return (state, action) => {
+    const update = updates[action.type]
+    if (update) {
+      return update(state, action.payload)
+    } else {
+      throw new Error('Unknown action', action)
+    }
+  }
+}
+
+const makeLocalActions = (type) => {
+
+}
+
+const start = (app) => {
+
+  const action$ = flyd.stream()
+
+}
+
+
+// hmm maybe this schema stuff is a little much. we're using pure functions
+// but now its hard to test, and we can do things like just render a view
+// with some state...
