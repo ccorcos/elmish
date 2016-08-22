@@ -1,14 +1,13 @@
 var webpack = require("webpack")
 var path = require("path")
 var root = __dirname
-var nib = require("nib")
 
 module.exports = {
   devtool: 'source-map',
   entry: {
     app: [
       'webpack-hot-middleware/client',
-      'entry.js'
+      'entry.js',
     ],
   },
   output: {
@@ -17,23 +16,28 @@ module.exports = {
   },
   module: {
     loaders: [
-      { test: /\.jsx?$/, loader: "babel", "exclude": /node_modules/, query: { presets: ['es2015', 'react'], "plugins": ["syntax-object-rest-spread"] } },
-      { test: /\.coffee$/, loader: "coffee" },
-      { test: /\.styl$/, loader: 'style-loader!css-loader!stylus-loader' },
-      { test: /\.(svg|png|jpe?g|gif|ttf|woff2?|eot)$/, loader: 'url?limit=8182' }
-    ]
-  },
-  stylus: {
-    use: [nib()]
+      {
+        test: /\.js$/,
+        loader: "babel",
+        exclude: /node_modules/,
+      },
+    ],
   },
   resolve: {
-    root: root
+    root: root,
+    alias: {
+      elmish: root,
+    }
+  },
+  babel: {
+    presets: [
+      'babel-preset-es2015',
+      'babel-preset-react',
+      'babel-preset-stage-0',
+    ],
   },
   plugins: [
     new webpack.HotModuleReplacementPlugin(),
     new webpack.NoErrorsPlugin(),
-    new webpack.ProvidePlugin({
-      'fetch': 'imports?this=>global!exports?global.fetch!whatwg-fetch'
-    })
-  ]
+  ],
 }
