@@ -111,23 +111,6 @@ export const lensQuery = (path) => {
 //   )
 // )
 
-
-export const start = (app) => {
-  const event$ = flyd.stream()
-  const state$ = flyd.scan(
-    (state, {action, payload}) => app.update(state, action, payload),
-    app.init(),
-    event$
-  )
-  const _dispatch = (action, payload, ...args) =>
-    isFunction(payload) ? event$({action, payload: payload(...args)}) : event$({action, payload})
-  const dispatch = (action, payload) => partial(_dispatch, action, payload)
-  const pub$ = flyd.map(state => app.publish(dispatch, state), state$)
-  const html$ = flydLift((state, pub) => app.view(dispatch, state, app.subscribe(state, pub)), state$, pub$)
-  const root = document.getElementById('root')
-  flyd.on(html => ReactDOM.render(html, root), html$)
-}
-
 const _liftDispatch = (dispatch, path, action, payload) => dispatch(liftAction(path, action), payload)
 export const liftDispatch = (dispatch, path) => partial(_liftDispatch, dispatch, path)
 
@@ -239,47 +222,80 @@ export const lift = (path, obj) => {
   }
 }
 
-export const Component = (obj) => {
-  // set some reasonable defaults
-  const component = {
-    __type: 'Elmish.Component',
-    path: [],
-    lifted: [],
-    init: () => ({}),
-    update: (state, action, payload) => state,
-    publish: (dispatch, state) => ({}),
-    subscribe: (state, pub, props) => ({}),
-    ...obj,
+// const {start, Component} = configure(drivers)
+export default const configure = (drivers) => {
+
+  const start = (app) => {
+    const event$ = flyd.stream()
+    const state$ = flyd.scan(
+      (state, {action, payload}) => app.update(state, action, payload),
+      app.init(),
+      event$
+    )
+    const _dispatch = (action, payload, ...args) =>
+      isFunction(payload) ?
+      event$({action, payload: payload(...args)}) :
+      event$({action, payload})
+    const dispatch = (action, payload) => partial(_dispatch, action, payload)
+    const pub$ = flyd.map(state => app.subscribe(state, app.publish(dispatch, state)), state$)
+
+    R.mapObjIndexed((handler, name) => {
+      flydLift((state, pub) => {
+        handler(app[name](dispatch, state, pub))
+      }, state$, pub$)
+    }, drivers)
   }
-  // because pipe with no arguments throws an error
-  // https://github.com/ramda/ramda/issues/1875
-  const lifted = R.append({
-    init: R.identity,
-    update: R.identity,
-    publish: R.always({}),
-    subscribe: R.always({}),
-  }, component.lifted)
-  // wire up the lifted sub-components
-  return R.evolve({
-    init: (init) => () => {
-      const inits = R.map(R.prop('init'), lifted)
-      return R.pipe(...inits)(init())
-    },
-    update: (update) => (state, action, payload) => {
-      const fns = R.map(c => s => c.update(s, action, payload), lifted)
-      return R.pipe(...fns)(update(state, action, payload))
-    },
-    publish: (publish) => (dispatch, state) => {
-      return R.pipe(
-        R.map(c => c.publish(dispatch, state)),
-        R.reduce(R.merge, publish(dispatch, state))
-      )(lifted)
-    },
-    subscribe: (subscribe) => (state, pub, props) => {
-      return R.pipe(
-        R.map(c => c.subscribe(state, pub, props)),
-        R.reduce(R.merge, subscribe(state, pub, props))
-      )(lifted)
-    },
-  }, component)
+
+  export const Component = (obj) => {
+    // set some reasonable defaults
+    const component = {
+      __type: 'Elmish.Component',
+      path: [],
+      lifted: [],
+      init: () => ({}),
+      update: (state, action, payload) => state,
+      publish: (dispatch, state) => ({}),
+      subscribe: (state, pub, props) => ({}),
+      ...obj,
+    }
+    // because pipe with no arguments throws an error
+    // https://github.com/ramda/ramda/issues/1875
+    const lifted = R.append({
+      init: R.identity,
+      update: R.identity,
+      publish: R.always({}),
+      subscribe: R.always({}),
+    }, component.lifted)
+    // wire up the lifted sub-components
+    return R.evolve({
+      init: (init) => () => {
+        const inits = R.map(R.prop('init'), lifted)
+        return R.pipe(...inits)(init())
+      },
+      update: (update) => (state, action, payload) => {
+        const fns = R.map(c => s => c.update(s, action, payload), lifted)
+        return R.pipe(...fns)(update(state, action, payload))
+      },
+      publish: (publish) => (dispatch, state) => {
+        return R.pipe(
+          R.map(c => c.publish(dispatch, state)),
+          R.reduce(R.merge, publish(dispatch, state))
+        )(lifted)
+      },
+      subscribe: (subscribe) => (state, pub, props) => {
+        return R.pipe(
+          R.map(c => c.subscribe(state, pub, props)),
+          R.reduce(R.merge, subscribe(state, pub, props))
+        )(lifted)
+      },
+    }, component)
+  }
 }
+
+
+const root = document.getElementById('root')
+
+const drivers = [{
+  handler: (html) => ReactDOM.render(html, root),
+  lift
+}]
