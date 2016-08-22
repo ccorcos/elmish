@@ -1,6 +1,8 @@
 import R from 'ramda'
 import flyd from 'flyd'
+import React from 'react'
 import ReactDOM from 'react-dom'
+import { partial } from 'elmish/v10/z'
 
 const isString = (x) => Object.prototype.toString.apply(x) === '[object String]'
 const isNumber = (x) => Object.prototype.toString.apply(x) === '[object Number]'
@@ -68,7 +70,7 @@ export const prettyAction = (action) => {
 
 // console.log(prettyAction(liftAction(['list', {id: 10}, 'state'], 'action')))
 
-const makeStateLens = (path) => {
+export const lensPath = (path) => {
   if (isString(path)) {
     return R.lensProp(path)
     } else if (isNumber(path)) {
@@ -77,7 +79,7 @@ const makeStateLens = (path) => {
     return lensWhereEq(path)
   } else if (isArray(path)) {
     return R.reduce(
-      (l, p) => R.compose(l, makeStateLens(p)),
+      (l, p) => R.compose(l, lensPath(p)),
       lensIdentity,
       path
     )
@@ -87,7 +89,7 @@ const makeStateLens = (path) => {
 // console.log(
 //   R.view(
 //     // R.compose(R.lensProp('list'), R.lensIndex(0)),
-//     makeStateLens(['list', 0]),
+//     lensPath(['list', 0]),
 //     {list: [{id:1, state: 1}]}
 //   )
 // )
@@ -95,7 +97,7 @@ const makeStateLens = (path) => {
 // console.log(
 //   R.set(
 //     // R.compose(R.lensProp('list'), R.lensIndex(0), R.lensProp('state')),
-//     makeStateLens(['list', 0, 'state']),
+//     lensPath(['list', 0, 'state']),
 //     2,
 //     {list: [{id:1, state: 1}]}
 //   )
@@ -103,7 +105,7 @@ const makeStateLens = (path) => {
 
 // console.log(
 //   R.view(
-//     makeStateLens(['list', {id: 1}, 'state']),
+//     lensPath(['list', {id: 1}, 'state']),
 //     {list: [{id:1, state: 1}]}
 //   )
 // )
@@ -123,8 +125,56 @@ export const start = (app) => {
   flyd.on(html => ReactDOM.render(html, root), html$)
 }
 
+const _liftDispatch = (dispatch, path, action, payload) => dispatch(liftAction(path, action), payload)
+export const liftDispatch = (dispatch, path) => partial(_liftDispatch, dispatch, path)
+
+
+const shallowCompare = (obj1, obj2) => {
+  if (obj1 === obj2) {
+    return true
+  } else if (!obj1 || !obj2) {
+    return false
+  } else {
+    const keys1 = Object.keys(obj1)
+    const keys2 = Object.keys(obj2)
+    if (keys1.length !== keys2.length) {
+      return false
+    } else {
+      for (var i = 0; i < keys1.length; i++) {
+        if (obj1[keys1[i]] !== obj2[keys1[i]]) {
+          return false
+        }
+      }
+      return true
+    }
+  }
+}
+
+const Lazy = React.createClass({
+  shouldComponentUpdate(nextProps) {
+    return !(
+      (nextProps.view === this.props.view) &&
+      (nextProps.state === this.props.state) &&
+      (shallowCompare(nextProps.props, this.props.props)) &&
+      (R.equals(nextProps.dispatch, this.props.dispatch))
+    )
+  },
+  render() {
+    return this.props.view(
+      this.props.dispatch,
+      this.props.state,
+      this.props.props
+    )
+  }
+})
+
+export const lazy = (view) => (dispatch, state, props) => {
+  return React.createElement(Lazy, {view, dispatch, state, props})
+}
+
+
 export const lift = (path, obj) => {
-  const lens = makeStateLens(path)
+  const lens = lensPath(path)
   return {
     ...obj,
     // this may be useful for debugging later
@@ -156,8 +206,8 @@ export const lift = (path, obj) => {
       }
     },
     view: (dispatch, state, props) => {
-      return obj.view(
-        (action, payload) => dispatch(liftAction(path, action), payload),
+      return lazy(obj.view)(
+        liftDispatch(dispatch, path),
         R.view(lens, state),
         props
       )

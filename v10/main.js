@@ -1,4 +1,4 @@
-import { lift, start, unliftAction } from 'elmish/v10/elmish'
+import { lift, start, unliftAction, liftDispatch, lensPath } from 'elmish/v10/elmish'
 import h from 'react-hyperscript'
 import R from 'ramda'
 
@@ -17,6 +17,7 @@ const Counter = {
     }
   },
   view: (dispatch, state, props) => {
+    console.log("render", state)
     return h('div.counter', [
       h('button.dec', {onClick: dispatch('dec')}, '-'),
       h('span.count', state.count),
@@ -118,7 +119,6 @@ const undoable = (kind) => {
       }
     },
     update: (state, action, payload) => {
-      console.log(action)
       if (action === 'undo') {
         return R.evolve({
           time: R.dec,
@@ -136,7 +136,7 @@ const undoable = (kind) => {
           // unlift action is easier since the action points to the old state
           R.evolve({
             states: R.adjust(
-              s => kind.update(s, unliftAction(action), payload),
+              s => kind.update(s, action, payload),
               state.time + 1,
             )
           }),
@@ -151,7 +151,11 @@ const undoable = (kind) => {
       return h('div', [
         h('button', {onClick: dispatch('undo'), disabled: !canUndo}, 'undo'),
         h('button', {onClick: dispatch('redo'), disabled: !canRedo}, 'redo'),
-        lift(['states', state.time], kind).view(dispatch, state, props)
+        kind.view(
+          dispatch,
+          R.view(lensPath(['states', state.time]), state),
+          props
+        )
       ])
     }
   }
@@ -162,6 +166,5 @@ const undoable = (kind) => {
 
 // Word! A few more helper functions and this is looking slick!
 // Lets start to push the limits a little bit.
-// - react laziness
 // - global state / actions
 // - declarative side-effects
