@@ -162,7 +162,104 @@ const undoable = (kind) => {
 }
 
 // start(undoable(Counter))
-start(undoable(listOf(Counter)))
+// start(undoable(listOf(Counter)))
+
+const Score = {
+  init: () => ({
+    count : 0,
+  }),
+  update: (state, action, payload) => {
+    switch(action) {
+      case 'inc':
+        return { count: state.count + 1 }
+      case 'dec':
+        return { count: state.count - 1 }
+      default:
+        throw new TypeError(`Unknown action type: ${action}`)
+    }
+  },
+  // publish to a global flat key-value map
+  publish: (dispatch, state) => {
+    return {
+      score: state.count,
+      goal: dispatch('inc'),
+    }
+  },
+  view: (dispatch, state, pub, props) => {
+    return h('div.counter', [
+      h('button.dec', {onClick: dispatch('dec')}, '-'),
+      h('span.count', state.count),
+      h('button.inc', {onClick: dispatch('inc')}, '+'),
+    ])
+  }
+}
+
+const ScoreBoard = {
+  // subscribe to value from the global key-value map
+  subscribe: (state, pub, props) => {
+    return R.pick(['score', 'goal'], pub)
+  },
+  view: (dispatch, state, pub, props) => {
+    return h('div', [
+      h('span', [
+        `Score: ${pub.score}`,
+      ]),
+      h('button', {onClick: pub.goal}, 'goal'),
+    ])
+  },
+}
+
+const GameScore = lift(['score'], Score)
+const GameScoreBoard = lift(['scoreboard'], ScoreBoard)
+
+const Game = {
+  init: () => {
+    return R.pipe(
+      GameScore.init,
+      GameScoreBoard.init
+    )({})
+  },
+  update: (state, action, payload) => {
+    return R.pipe(
+      s => GameScore.update(s, action, payload),
+      s => GameScoreBoard.update(s, action, payload)
+    )(state)
+  },
+  subscribe: (state, pub, props) => {
+    return GameScoreBoard.subscribe(state.scoreboard, pub)
+    // return R.merge(
+    //   // GameScore.subscribe(pub, state),
+    //   GameScoreBoard.subscribe(pub, state)
+    // )
+  },
+  publish: (dispatch, state) => {
+    return GameScore.publish(liftDispatch(dispatch, ['score']), state.score)
+    // return R.merge(
+    //   GameScore.publish(dispatch, state),
+    //   // GameScoreBoard.publish(dispatch, state)
+    // )
+  },
+  view: (dispatch, state, pub, props) => {
+    return h('div', [
+      GameScore.view(dispatch, state, pub),
+      GameScoreBoard.view(dispatch, state, pub),
+    ])
+  },
+}
+
+start(Game)
+
+// publication todos:
+// - constructor function that assigns sane defaults for init, update, etc.
+// - lift publish and subscribe
+// - lifting view should call subscribe on the pubs
+// helper functions:
+// - lifted can wire up some boiler plate for us: lifted([counter1, counter2])
+// - generic declarative side-effect drivers
+
+
+
+
 
 // Word! A few more helper functions and this is looking slick!
 // Lets start to push the limits a little bit.

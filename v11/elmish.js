@@ -3,6 +3,7 @@ import flyd from 'flyd'
 import React from 'react'
 import ReactDOM from 'react-dom'
 import { partial } from 'elmish/v10/z'
+import flydLift from 'flyd/module/lift'
 
 const isString = (x) => Object.prototype.toString.apply(x) === '[object String]'
 const isNumber = (x) => Object.prototype.toString.apply(x) === '[object Number]'
@@ -120,7 +121,8 @@ export const start = (app) => {
   )
   const dispatch = (action, payload) => (...args) =>
     isFunction(payload) ? event$({action, payload: payload(...args)}) : event$({action, payload})
-  const html$ = flyd.map((state) => app.view(dispatch, state), state$)
+  const pub$ = flyd.map(state => app.publish(dispatch, state), state$)
+  const html$ = flydLift((state, pub) => app.view(dispatch, state, app.subscribe(state, pub)), state$, pub$)
   const root = document.getElementById('root')
   flyd.on(html => ReactDOM.render(html, root), html$)
 }
@@ -177,7 +179,7 @@ export const lift = (path, obj) => {
   return {
     ...obj,
     // this may be useful for debugging later
-    path: path.concat(obj.path || []),
+    path: path.concat(obj.path),
     // nest the state
     init: (state) => {
       return R.set(
@@ -211,5 +213,17 @@ export const lift = (path, obj) => {
         props
       )
     }
+  }
+}
+
+export Component = (obj) => {
+  return {
+    __type: 'Elmish.Component',
+    path: [],
+    init: () => ({}),
+    update: (state, action, payload) => state,
+    publish: (dispatch, state) => ({}),
+    subscribe: (state, pub, props) => ({}),
+    ...obj,
   }
 }
