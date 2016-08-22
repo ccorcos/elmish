@@ -25,28 +25,48 @@ const lensWhereEq = (obj) => {
   )
 }
 
-// make action prefix for lifting actions
-const makeActionPrefix = (path) => {
+export const liftAction = (path, action) => {
+  return [path, action]
+}
+
+export const unliftAction = (action) => {
+  return action[1]
+}
+
+export const isLiftedAction = (path, action) => {
+  return isArray(action) && R.equals(action[0], path)
+}
+
+// pretty printing actions
+const prettyPath = (path) => {
   if (isString(path) || isNumber(path)) {
-    return `${path}/`
+    return `${path}`
   } else if (isObject(path)) {
     return R.pipe(
       R.toPairs,
       R.map(R.join(':')),
       R.join(','),
-      addSuffix('/')
     )(path)
   } else if (isArray(path)) {
     return R.pipe(
-      R.map(makeActionPrefix),
-      R.join(''),
+      R.map(prettyPath),
+      R.join('/'),
+      addSuffix(' -> ')
     )(path)
   } else {
     throw new TypeError(`Unknown path: ${path}`)
   }
 }
 
-// console.log(makeActionPrefix(['list', {id: 10}, 'state']))
+export const prettyAction = (action) => {
+  if (isArray(action)) {
+    return prettyPath(action[0]) + prettyAction(action[1])
+  } else {
+    return action
+  }
+}
+
+// console.log(prettyAction(liftAction(['list', {id: 10}, 'state'], 'action')))
 
 const makeStateLens = (path) => {
   if (isString(path)) {
@@ -104,7 +124,6 @@ export const start = (app) => {
 }
 
 export const lift = (path, obj) => {
-  const prefix = makeActionPrefix(path)
   const lens = makeStateLens(path)
   return {
     ...obj,
@@ -122,12 +141,12 @@ export const lift = (path, obj) => {
     },
     // unprefix action and update nested state
     update: (state, action, payload) => {
-      if (startsWith(prefix, action)) {
+      if (isLiftedAction(path, action)) {
         return R.over(
           lens,
           s => obj.update(
             s,
-            stripl(prefix, action),
+            unliftAction(action),
             payload
           ),
           state
@@ -136,10 +155,9 @@ export const lift = (path, obj) => {
         return state
       }
     },
-    // prefix actions and pass on nested state
     view: (dispatch, state, props) => {
       return obj.view(
-        (action, payload) => dispatch(addPrefix(prefix, action), payload),
+        (action, payload) => dispatch(liftAction(path, action), payload),
         R.view(lens, state),
         props
       )

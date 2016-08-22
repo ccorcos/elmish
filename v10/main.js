@@ -1,4 +1,4 @@
-import { lift, start } from 'elmish/v10/elmish'
+import { lift, start, unliftAction } from 'elmish/v10/elmish'
 import h from 'react-hyperscript'
 import R from 'ramda'
 
@@ -38,7 +38,6 @@ const CounterPair = {
     )({})
   },
   update: (state, action, payload) => {
-    console.log(action)
     return R.pipe(
       s => Counter1.update(s, action, payload),
       s => Counter2.update(s, action, payload)
@@ -119,6 +118,7 @@ const undoable = (kind) => {
       }
     },
     update: (state, action, payload) => {
+      console.log(action)
       if (action === 'undo') {
         return R.evolve({
           time: R.dec,
@@ -132,23 +132,16 @@ const undoable = (kind) => {
           // kill the future
           R.evolve({states: R.slice(0, state.time + 1)}),
           // copy current state to the end
+          R.evolve({states: list => R.append(R.last(list), list)}),
+          // unlift action is easier since the action points to the old state
           R.evolve({
-            states: list => R.append(R.last(list), list),
+            states: R.adjust(
+              s => kind.update(s, unliftAction(action), payload),
+              state.time + 1,
+            )
           }),
-          // this will operate on the second to last one since the action...
-          s => lift(['states', s.time], kind).update(s, action, payload),
           // increment time
-          R.evolve({time: R.inc}),
-          // and heres a the hacky fix
-          R.evolve({
-            states: list => {
-              const last = list[list.length - 1]
-              const latest = list[list.length - 2]
-              list[list.length - 2] = last
-              list[list.length - 1] = latest
-              return list
-            }
-          })
+          R.evolve({time: R.inc})
         )(state)
       }
     },
@@ -167,17 +160,8 @@ const undoable = (kind) => {
 // start(undoable(Counter))
 // start(undoable(listOf(Counter)))
 
-
-// lets refactor action lifting so that we can unlift actions.
-
-
-
-
 // Word! A few more helper functions and this is looking slick!
 // Lets start to push the limits a little bit.
-// - listOf
-// - undoable
-// - dependent counters
 // - react laziness
 // - global state / actions
 // - declarative side-effects
