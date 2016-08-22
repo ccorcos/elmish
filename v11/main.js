@@ -1,8 +1,8 @@
-import { lift, start, unliftAction, liftDispatch, lensPath } from 'elmish/v10/elmish'
+import { Component, lift, start, unliftAction, liftDispatch, lensQuery } from 'elmish/v11/elmish'
 import h from 'react-hyperscript'
 import R from 'ramda'
 
-const Counter = {
+const Counter = Component({
   init: () => ({
     count : 0,
   }),
@@ -24,14 +24,14 @@ const Counter = {
       h('button.inc', {onClick: dispatch('inc')}, '+'),
     ])
   }
-}
+})
 
 // start(Counter)
 
 const Counter1 = lift(['counter1'], Counter)
 const Counter2 = lift(['counter2'], Counter)
 
-const CounterPair = {
+const CounterPair = Component({
   init: () => {
     return R.pipe(
       Counter1.init,
@@ -50,18 +50,31 @@ const CounterPair = {
       Counter2.view(dispatch, state),
     ])
   }
-}
+})
 
 // start(CounterPair)
 
+const CounterPair2 = Component({
+  lifted: [Counter1, Counter2],
+  view: (dispatch, state, props) => {
+    return h('div', [
+      Counter1.view(dispatch, state),
+      Counter2.view(dispatch, state),
+    ])
+  }
+})
+
+// start(CounterPair2)
+
 const listOf = (kind) => {
-  return {
+  const child = (id) => lift(['list', {id}, 'state'], kind)
+  return Component({
     init: () => {
       return {
         nextId: 1,
         list: [{
           id: 0,
-          state: kind.init()
+          state: kind.init(),
         }],
       }
     },
@@ -80,12 +93,7 @@ const listOf = (kind) => {
         }, state)
       } else {
         return state.list.reduce(
-          (s, item) => {
-            return lift(
-              ['list', {id: item.id}, 'state'],
-              kind
-            ).update(s, action, payload)
-          },
+          (s, item) => child(item.id).update(s, action, payload),
           state,
           state.list.items
         )
@@ -96,22 +104,19 @@ const listOf = (kind) => {
         h('button', {onClick: dispatch('add')}, '+'),
         state.list.map(item =>
           h('div.item', {key: item.id}, [
-            lift(
-              ['list', {id: item.id}, 'state'],
-              kind
-            ).view(dispatch, state),
+            child(item.id).view(dispatch, state),
             h('button', {onClick: dispatch('remove', item.id)}, 'x')
           ])
         )
       ])
     }
-  }
+  })
 }
 
 // start(listOf(Counter))
 
 const undoable = (kind) => {
-  return {
+  return Component({
     init: () => {
       return {
         time: 0,
@@ -128,21 +133,16 @@ const undoable = (kind) => {
           time: R.inc,
         }, state)
       } else {
-        return R.pipe(
-          // kill the future
-          R.evolve({states: R.slice(0, state.time + 1)}),
-          // copy current state to the end
-          R.evolve({states: list => R.append(R.last(list), list)}),
-          // unlift action is easier since the action points to the old state
-          R.evolve({
-            states: R.adjust(
-              s => kind.update(s, action, payload),
-              state.time + 1,
-            )
-          }),
+        return R.evolve({
           // increment time
-          R.evolve({time: R.inc})
-        )(state)
+          time: R.inc,
+          states: R.pipe(
+            // slice out any redo states
+            R.slice(0, state.time + 1),
+            // update the last state and append it
+            list => R.append(kind.update(R.last(list), action, payload), list),
+          )
+        })(state)
       }
     },
     view: (dispatch, state, props) => {
@@ -153,18 +153,18 @@ const undoable = (kind) => {
         h('button', {onClick: dispatch('redo'), disabled: !canRedo}, 'redo'),
         kind.view(
           dispatch,
-          R.view(lensPath(['states', state.time]), state),
+          R.view(lensQuery(['states', state.time]), state),
           props
         )
       ])
     }
-  }
+  })
 }
 
 // start(undoable(Counter))
 // start(undoable(listOf(Counter)))
 
-const Score = {
+const Score = Component({
   init: () => ({
     count : 0,
   }),
@@ -192,76 +192,80 @@ const Score = {
       h('button.inc', {onClick: dispatch('inc')}, '+'),
     ])
   }
-}
+})
 
-const ScoreBoard = {
+const ScoreBoard = Component({
   // subscribe to value from the global key-value map
   subscribe: (state, pub, props) => {
-    return R.pick(['score', 'goal'], pub)
+    return R.pick(['score'], pub)
   },
   view: (dispatch, state, pub, props) => {
     return h('div', [
       h('span', [
         `Score: ${pub.score}`,
       ]),
-      h('button', {onClick: pub.goal}, 'goal'),
     ])
   },
-}
+})
+
+const Scorer = Component({
+  subscribe: (state, pub, props) => {
+    return R.pick(['goal'], pub)
+  },
+  view: (dispatch, state, pub, props) => {
+    console.log('render scorer')
+    return h('div', [
+      h('button', {onClick: pub.goal}, 'goal'),
+    ])
+  }
+})
 
 const GameScore = lift(['score'], Score)
-const GameScoreBoard = lift(['scoreboard'], ScoreBoard)
 
-const Game = {
+const Game = Component({
   init: () => {
-    return R.pipe(
-      GameScore.init,
-      GameScoreBoard.init
-    )({})
+    return GameScore.init({})
   },
   update: (state, action, payload) => {
-    return R.pipe(
-      s => GameScore.update(s, action, payload),
-      s => GameScoreBoard.update(s, action, payload)
-    )(state)
+    return GameScore.update(state, action, payload)
   },
   subscribe: (state, pub, props) => {
-    return GameScoreBoard.subscribe(state.scoreboard, pub)
-    // return R.merge(
-    //   // GameScore.subscribe(pub, state),
-    //   GameScoreBoard.subscribe(pub, state)
-    // )
+    return R.merge(
+      ScoreBoard.subscribe(state, pub),
+      Scorer.subscribe(state, pub)
+    )
   },
   publish: (dispatch, state) => {
-    return GameScore.publish(liftDispatch(dispatch, ['score']), state.score)
-    // return R.merge(
-    //   GameScore.publish(dispatch, state),
-    //   // GameScoreBoard.publish(dispatch, state)
-    // )
+    return GameScore.publish(dispatch, state)
   },
   view: (dispatch, state, pub, props) => {
     return h('div', [
-      GameScore.view(dispatch, state, pub),
-      GameScoreBoard.view(dispatch, state, pub),
+      GameScore.view(dispatch, state),
+      ScoreBoard.view(dispatch, state, pub),
+      Scorer.view(dispatch, state, pub),
     ])
   },
-}
+})
 
-start(Game)
+// start(Game)
 
-// publication todos:
-// - constructor function that assigns sane defaults for init, update, etc.
-// - lift publish and subscribe
-// - lifting view should call subscribe on the pubs
-// helper functions:
-// - lifted can wire up some boiler plate for us: lifted([counter1, counter2])
+const GameScoreBoard = lift(['scoreBoard'], ScoreBoard)
+const GameScorer = lift(['scorer'], Scorer)
+
+const Game2 = Component({
+  lifted: [GameScore, GameScoreBoard, GameScorer],
+  view: (dispatch, state, pub, props) => {
+    return h('div', [
+      GameScore.view(dispatch, state),
+      GameScoreBoard.view(dispatch, state, pub),
+      GameScorer.view(dispatch, state, pub),
+    ])
+  },
+})
+
+start(Game2)
+
+// TODO:
 // - generic declarative side-effect drivers
-
-
-
-
-
-// Word! A few more helper functions and this is looking slick!
-// Lets start to push the limits a little bit.
-// - global state / actions
-// - declarative side-effects
+// - ideally we could lazily generate publications and subscription, but lets
+//   leave that for later...
