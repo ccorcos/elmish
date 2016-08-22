@@ -3,6 +3,7 @@ import flyd from 'flyd'
 import React from 'react'
 import ReactDOM from 'react-dom'
 import { partial } from 'elmish/v10/z'
+import flydLift from 'flyd/module/lift'
 
 const isString = (x) => Object.prototype.toString.apply(x) === '[object String]'
 const isNumber = (x) => Object.prototype.toString.apply(x) === '[object Number]'
@@ -120,7 +121,8 @@ export const start = (app) => {
   )
   const dispatch = (action, payload) => (...args) =>
     isFunction(payload) ? event$({action, payload: payload(...args)}) : event$({action, payload})
-  const html$ = flyd.map(state => app.view(dispatch, state), state$)
+  const pub$ = flyd.map(state => app.publish(dispatch, state), state$)
+  const html$ = flydLift((state, pub) => app.view(dispatch, state, app.subscribe(state, pub)), state$, pub$)
   const root = document.getElementById('root')
   flyd.on(html => ReactDOM.render(html, root), html$)
 }
@@ -172,7 +174,6 @@ export const lazy = (view) => (dispatch, state, props) => {
   return React.createElement(Lazy, {view, dispatch, state, props})
 }
 
-
 export const lift = (path, obj) => {
   const lens = lensPath(path)
   return {
@@ -183,7 +184,7 @@ export const lift = (path, obj) => {
     init: (state) => {
       return R.set(
         lens,
-        obj.init(
+        obj.init && obj.init(
           R.view(lens, state)
         ),
         state
@@ -194,7 +195,7 @@ export const lift = (path, obj) => {
       if (isLiftedAction(path, action)) {
         return R.over(
           lens,
-          s => obj.update(
+          s => obj.update && obj.update(
             s,
             unliftAction(action),
             payload
