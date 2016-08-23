@@ -1,4 +1,4 @@
-import { Component, lift, start, unliftAction, liftDispatch, lensQuery } from 'elmish/v11/elmish'
+import { Component, lift, start, unliftAction, liftDispatch, lensQuery } from 'elmish/v12/elmish'
 import h from 'react-hyperscript'
 import R from 'ramda'
 
@@ -16,7 +16,7 @@ const Counter = Component({
         throw new TypeError(`Unknown action type: ${action}`)
     }
   },
-  view: (dispatch, state, props) => {
+  view: (dispatch, state, pub, props) => {
     console.log("render", state)
     return h('div.counter', [
       h('button.dec', {onClick: dispatch('dec')}, '-'),
@@ -44,7 +44,7 @@ const CounterPair = Component({
       s => Counter2.update(s, action, payload)
     )(state)
   },
-  view: (dispatch, state, props) => {
+  view: (dispatch, state, pub, props) => {
     return h('div', [
       Counter1.view(dispatch, state),
       Counter2.view(dispatch, state),
@@ -56,7 +56,7 @@ const CounterPair = Component({
 
 const CounterPair2 = Component({
   lifted: [Counter1, Counter2],
-  view: (dispatch, state, props) => {
+  view: (dispatch, state, pub, props) => {
     return h('div', [
       Counter1.view(dispatch, state),
       Counter2.view(dispatch, state),
@@ -99,7 +99,7 @@ const listOf = (kind) => {
         )
       }
     },
-    view: (dispatch, state, props) => {
+    view: (dispatch, state, pub, props) => {
       return h('div', [
         h('button', {onClick: dispatch('add')}, '+'),
         state.list.map(item =>
@@ -145,7 +145,7 @@ const undoable = (kind) => {
         })(state)
       }
     },
-    view: (dispatch, state, props) => {
+    view: (dispatch, state, pub, props) => {
       const canUndo = state.time > 0
       const canRedo = state.time < state.states.length - 1
       return h('div', [
@@ -157,11 +157,19 @@ const undoable = (kind) => {
           props
         )
       ])
+    },
+    hotkeys: (dispatch, state, props) => {
+      const canUndo = state.time > 0
+      const canRedo = state.time < state.states.length - 1
+      return R.merge(
+        canUndo ? {'cmd z': dispatch('undo')} : {},
+        canRedo ? {'cmd shift z': dispatch('redo')} : {},
+      )
     }
   })
 }
 
-// start(undoable(Counter))
+start(undoable(Counter))
 // start(undoable(listOf(Counter)))
 
 const Score = Component({
@@ -263,9 +271,17 @@ const Game2 = Component({
   },
 })
 
-start(Game2)
+// start(Game2)
 
 // TODO:
-// - generic declarative side-effect drivers
+// - lets build some services
+//   - hotkeys
+//   - http
+//   - graphql should work more like how publications work...
+// - remember that if we declare lifted children then we can parse through the
+//   component tree to generate and lazily merge side-effects. the hard part is
+//   when it comes to undoable and listOf since the children arent static. so we
+//   will need some kind of dynamic lifted function that will return the lifted
+//   components on demand.
 // - ideally we could lazily generate publications and subscription, but lets
 //   leave that for later...
