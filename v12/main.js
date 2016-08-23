@@ -274,6 +274,7 @@ const Game2 = Component({
 // start(Game2)
 
 // TODO:
+// - hotkeys service should be doing some merging/lifting and laziness
 // - lets build some services
 //   - hotkeys
 //   - http
