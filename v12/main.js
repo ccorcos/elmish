@@ -17,7 +17,7 @@ const Counter = Component({
     }
   },
   view: (dispatch, state, pub, props) => {
-    console.log("render", state)
+    // console.log("render", state)
     return h('div.counter', [
       h('button.dec', {onClick: dispatch('dec')}, '-'),
       h('span.count', state.count),

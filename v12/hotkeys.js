@@ -65,8 +65,27 @@ const useHotkeysOverride = (e) => {
   return element.className.indexOf('with-hotkeys') > -1
 }
 
-const shouldCaptureHotkeys = (e) => {
-  if (isInput(e)) {
+const modifierKeys = [
+  'ctrl',
+  'shift',
+  'alt',
+  'meta',
+]
+
+const isModifier = key => R.contains(key, modifierKeys)
+
+const lookupEventKey = (e) =>  {
+  const code = e.which || e.keyCode
+  return keymap[code] || String.fromCharCode(code).toLowerCase()
+}
+
+// ignore modifier key events for two reasons:
+// - for shortcuts like `cmd +` the keyup event will be skipped
+// - the modifier keys are on the event anyways
+const shouldCaptureHotkey = (e) => {
+  if (isModifier(lookupEventKey(e))) {
+    return false
+  } else if (isInput(e)) {
     if (useHotkeysOverride(e)) {
       return true
     } else {
@@ -77,59 +96,9 @@ const shouldCaptureHotkeys = (e) => {
   }
 }
 
-const lookupEventKey = (e) =>  {
-  const code = e.which || e.keyCode
-  return keymap[code] || String.fromCharCode(code).toLowerCase()
-}
-
-const keydown$ = flyd.stream()
-const keyup$ = flyd.stream()
-
-document.addEventListener('keydown', keydown$)
-document.addEventListener('keyup', keyup$)
-
-// flyd.on(console.log.bind(console), keyup$)
-
-const action$ = flyd.merge(
-  R.pipe(
-    filter(shouldCaptureHotkeys),
-    flyd.map(event => ({event, key: lookupEventKey(event)})),
-    flyd.map(R.assoc('action', 'keydown'))
-  )(keydown$),
-  R.pipe(
-    // filter(shouldCaptureHotkeys),
-    flyd.map(event => ({event, key: lookupEventKey(event)})),
-    flyd.map(R.assoc('action', 'keyup'))
-  )(keyup$)
-)
-
 const addKey = (key, keys) => R.uniq(R.append(key, keys))
 const removeKey = (key, keys) => R.filter(R.complement(R.equals(key)), keys)
-
-const state$ = flyd.scan(({keys}, {action, event, key}) => {
-  if (action === 'keyup') {
-    return {
-      event,
-      action,
-      keys: removeKey(key, keys),
-    }
-  } else if (action === 'keydown') {
-    return {
-      event,
-      action,
-      keys: addKey(key, keys),
-    }
-  }
-}, {keys: []}, action$)
-
 const formatKeys = keys => keys.sort().join(' ')
-
-// dont want to trigger hotkeys on keyup events
-const hotkey$ = R.pipe(
-  filter(R.propEq('action', 'keydown')),
-  flyd.map(R.evolve({keys: formatKeys}))
-)(state$)
-
 const translateAliases = k => (aliases[k] || k)
 const formatHotkeyStr = def => formatKeys(def.split(' ').map(translateAliases))
 
@@ -143,21 +112,58 @@ const mapKeys = R.curry((fn, obj) => {
 
 const formatHotkeyDef = mapKeys(formatHotkeyStr)
 
+const getModifiers = e => {
+  const mods = []
+  if (e.ctrlKey) {
+    mods.push('ctrl')
+  }
+  if (e.altKey) {
+    mods.push('alt')
+  }
+  if (e.shiftKey) {
+    mods.push('shift')
+  }
+  if (e.metaKey) {
+    mods.push('meta')
+  }
+  return mods
+}
+
 const driver = (app, dispatch, batch) => {
-  const listener$ = flyd.stream({})
 
-  flyd.on(({keys, event}) => {
-    const callback = listener$()[keys]
-    if (callback) {
-      console.log(keys)
-      event.preventDefault()
-      event.stopPropagation()
-      callback()
+  let keys = []
+  let listeners = {}
+
+  document.addEventListener('keydown', (e) => {
+    if (shouldCaptureHotkey(e)) {
+      const key = lookupEventKey(e)
+      keys = addKey(key, keys)
+
+      const hotkey = formatKeys(keys.concat(getModifiers(e)))
+      console.log(hotkey)
+      const callback = listeners[hotkey]
+      if (callback) {
+        e.preventDefault()
+        e.stopPropagation()
+        callback()
+        // keyup only fires *after* the default action has been performed
+        // http://www.quirksmode.org/dom/events/keys.html
+        keys = removeKey(key, keys)
+      }
     }
-  }, hotkey$)
+  })
 
-  const setListeners = R.compose(listener$, formatHotkeyDef)
-  return (state, pub) => setListeners(app.hotkeys(dispatch, state, pub))
+  document.addEventListener('keyup', (e) => {
+    if (shouldCaptureHotkey(e)) {
+      const key = lookupEventKey(e)
+      keys = removeKey(key, keys)
+    }
+  })
+
+  return (state, pub) => {
+    const def = app.hotkeys(dispatch, state, pub)
+    listeners = formatHotkeyDef(def)
+  }
 }
 
 export default driver
