@@ -8,6 +8,7 @@ export const partial = (fn, ...args) => {
     return R.apply(fn, R.concat(args, more))
   }
   _fn.fn = fn
+  _fn.__type = 'thunk'
   _fn.args = args
   _fn.equals = (fn2) => {
     return R.equals(fn2.fn, _fn.fn) &&
