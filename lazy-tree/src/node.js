@@ -30,7 +30,7 @@ function compareObj(o1, o2) {
   if (k1.length !== k2.length) {
     return false
   }
-  for (var i = 0; i < k1.length; i++) {
+  for (let i = 0; i < k1.length; i++) {
     const k = k1[i]
     if (o1[k] && o1[k].__type === 'thunk') {
       if (!equals(o1[k], o2[k])) {
@@ -47,7 +47,7 @@ function compareArray(a1, a2) {
   if (a1.length !== a2.length) {
     return false
   }
-  for (var i = 0; i < a1.length; i++) {
+  for (let i = 0; i < a1.length; i++) {
     if (a1[i] && a1[i].__type === 'thunk') {
       if (!equals(a1[i], a2[i])) {
         return false
