@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "xo && ava --verbose"
+    "test": "xo && nyc --check-coverage --lines 100 --reporter=lcov --reporter=text ava --verbose"
   },
   "keywords": [],
   "author": "",

@@ -1,8 +1,5 @@
-import {compare} from './thunk'
 import {zip} from './utils'
-
-// shallow referential equality
-const equals = compare((a, b) => a === b)
+import {equals} from './node'
 
 function reduceNode(fn, prev, node) {
   if (prev.node === node) {
