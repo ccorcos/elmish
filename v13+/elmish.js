@@ -5,20 +5,7 @@ import ReactDOM from 'react-dom'
 import { partial } from 'elmish/v10/z'
 import flydLift from 'flyd/module/lift'
 import hotkeys from 'elmish/v12/hotkeys'
-
-const isString = (x) => Object.prototype.toString.apply(x) === '[object String]'
-const isNumber = (x) => Object.prototype.toString.apply(x) === '[object Number]'
-const isObject = (x) => Object.prototype.toString.apply(x) === '[object Object]'
-const isArray = (x) => Object.prototype.toString.apply(x) === '[object Array]'
-const isFunction = (x) => Object.prototype.toString.apply(x) === '[object Function]'
-
-const addPrefix = R.add
-const addSuffix = R.flip(R.add)
-const startsWith = R.curry((q, str) => str.startsWith(q))
-const endsWith = R.curry((q, str) => str.endsWith(q))
-const stripl = R.curry((q, str) => startsWith(q, str) ? str.slice(q.length) : str)
-const stripr = R.curry((q, str) => endsWith(q, str) ? str.slice(0, str.length - q.length) : str)
-const strip = R.curry((q, str) => stripl(q, stripr(q, str)))
+import is from 'elmish/v13+/utils/is'
 
 const lensIdentity = R.lens(R.identity, R.identity)
 const lensWhereEq = (obj) => {
@@ -38,48 +25,17 @@ export const unliftAction = (action) => {
 }
 
 export const isLiftedAction = (path, action) => {
-  return isArray(action) && R.equals(action[0], path)
+  return is.array(action) && R.equals(action[0], path)
 }
-
-// pretty printing actions
-const prettyPath = (path) => {
-  if (isString(path) || isNumber(path)) {
-    return `${path}`
-  } else if (isObject(path)) {
-    return R.pipe(
-      R.toPairs,
-      R.map(R.join(':')),
-      R.join(','),
-    )(path)
-  } else if (isArray(path)) {
-    return R.pipe(
-      R.map(prettyPath),
-      R.join('/'),
-      addSuffix(' -> ')
-    )(path)
-  } else {
-    throw new TypeError(`Unknown path: ${path}`)
-  }
-}
-
-export const prettyAction = (action) => {
-  if (isArray(action)) {
-    return prettyPath(action[0]) + prettyAction(action[1])
-  } else {
-    return action
-  }
-}
-
-// console.log(prettyAction(liftAction(['list', {id: 10}, 'state'], 'action')))
 
 export const lensQuery = (path) => {
-  if (isString(path)) {
+  if (is.string(path)) {
     return R.lensProp(path)
-    } else if (isNumber(path)) {
+  } else if (is.number(path)) {
     return R.lensIndex(path)
-  } else if (isObject(path)) {
+  } else if (is.object(path)) {
     return lensWhereEq(path)
-  } else if (isArray(path)) {
+  } else if (is.array(path)) {
     return R.reduce(
       (l, p) => R.compose(l, lensQuery(p)),
       lensIdentity,
@@ -128,7 +84,7 @@ const shallowCompare = (obj1, obj2) => {
     } else {
       for (var i = 0; i < keys1.length; i++) {
         if (obj1[keys1[i]] !== obj2[keys1[i]]) {
-          if (isFunction(obj1[keys1[i]])) {
+          if (is.function(obj1[keys1[i]])) {
             if (!R.equals(obj1[keys1[i]], obj2[keys1[i]])) {
               return false
             }
@@ -277,7 +233,7 @@ export const configure = drivers => app => {
     event$
   )
   const _dispatch = (action, payload, ...args) =>
-    isFunction(payload) ?
+    is.function(payload) ?
     event$({action, payload: payload(...args)}) :
     event$({action, payload})
 

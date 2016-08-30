@@ -1,4 +1,4 @@
-import { Component, lift, start, unliftAction, liftDispatch, lensQuery } from 'elmish/v12/elmish'
+import { Component, lift, start, unliftAction, liftDispatch, lensQuery } from 'elmish/v13+/elmish'
 import h from 'react-hyperscript'
 import R from 'ramda'
 
