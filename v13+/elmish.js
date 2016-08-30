@@ -69,15 +69,8 @@ const configure = plugins => {
     const viewState = R.view(lens)
     const liftDispatch = dispatch => partial(_liftDispatch)(dispatch, path)
 
-    const lifted = R.pipe(
-      R.map(fn => fn(path, viewState, liftDispatch)(obj)),
-      R.pick(R.keys(obj))
-    )(spec.lift)
-
-    return {
-      // this may be useful for debugging later
-      path: path.concat(obj.path),
-      // set the state one
+    const baseLift = {
+      children: (obj.children || []).map(child => lift(path, child)),
       init: (state) => {
         return R.set(
           lens,
@@ -116,7 +109,14 @@ const configure = plugins => {
           return state
         }
       },
-      ...lifted,
+    }
+
+    const pluginLift = R.map(fn => fn(path, viewState, liftDispatch)(obj), spec.lift)
+
+    return {
+      // this may be useful for debugging later
+      path: path.concat(obj.path || []),
+      ...R.pick(R.keys(obj), R.merge(baseLift, pluginLift)),
     }
   }
 

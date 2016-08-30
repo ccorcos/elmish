@@ -31,8 +31,8 @@ const Counter = {
 const Counter1 = lift(['counter1'], Counter)
 const Counter2 = lift(['counter2'], Counter)
 
-const CounterPair = {
-  _init: () => {
+const NaiveCounterPair = {
+  init: () => {
     return R.pipe(
       Counter1._init,
       Counter2._init,
@@ -52,13 +52,11 @@ const CounterPair = {
   }
 }
 
-// start(CounterPair)
+// start(NaiveCounterPair)
 
-const CounterPair2 = {
+const CounterPair = {
   children: [Counter1, Counter2],
-  init: () => ({}),
   view: (dispatch, state, pub, props) => {
-    console.log(state)
     return h('div', [
       Counter1.view(dispatch, state),
       Counter2.view(dispatch, state),
@@ -66,11 +64,77 @@ const CounterPair2 = {
   }
 }
 
-start(CounterPair2)
+// start(CounterPair)
+
+const CounterPair1 = lift(['counterPair1'], CounterPair)
+const CounterPair2 = lift(['counterPair2'], CounterPair)
+
+const CounterQuad = {
+  children: [CounterPair1, CounterPair2],
+  view: (dispatch, state, pub, props) => {
+    console.log(state)
+    return h('div', [
+      CounterPair1.view(dispatch, state),
+      CounterPair2.view(dispatch, state),
+    ])
+  }
+}
+
+start(CounterQuad)
+
+const naiveListOf = (kind) => {
+  const child = (id) => lift(['list', {id}, 'state'], kind)
+  return {
+    init: () => {
+      return {
+        nextId: 1,
+        list: [{
+          id: 0,
+          state: kind.init(),
+        }],
+      }
+    },
+    update: (state, action, payload) => {
+      if (action === 'add') {
+        return {
+          nextId: state.nextId + 1,
+          list: state.list.concat([{
+            id: state.nextId,
+            state: kind.init(),
+          }]),
+        }
+      } else if (action === 'remove') {
+        return R.evolve({
+          list: R.filter(R.complement(R.propEq('id', payload)))
+        }, state)
+      } else {
+        return state.list.reduce(
+          (s, item) => child(item.id).update(s, action, payload),
+          state,
+          state.list.items
+        )
+      }
+    },
+    view: (dispatch, state, pub, props) => {
+      return h('div', [
+        h('button', {onClick: dispatch('add')}, '+'),
+        state.list.map(item =>
+          h('div.item', {key: item.id}, [
+            child(item.id).view(dispatch, state),
+            h('button', {onClick: dispatch('remove', item.id)}, 'x')
+          ])
+        )
+      ])
+    }
+  }
+}
+
+// start(naiveListOf(Counter))
 
 // const listOf = (kind) => {
 //   const child = (id) => lift(['list', {id}, 'state'], kind)
 //   return {
+//     children: state => state.list.map(({id}) => child(id)),
 //     init: () => {
 //       return {
 //         nextId: 1,
@@ -94,11 +158,12 @@ start(CounterPair2)
 //           list: R.filter(R.complement(R.propEq('id', payload)))
 //         }, state)
 //       } else {
-//         return state.list.reduce(
-//           (s, item) => child(item.id).update(s, action, payload),
-//           state,
-//           state.list.items
-//         )
+//         return state
+//         // return state.list.reduce(
+//         //   (s, item) => child(item.id).update(s, action, payload),
+//         //   state,
+//         //   state.list.items
+//         // )
 //       }
 //     },
 //     view: (dispatch, state, pub, props) => {
@@ -112,11 +177,11 @@ start(CounterPair2)
 //         )
 //       ])
 //     }
-//   })
+//   }
 // }
 //
-// // start(listOf(Counter))
-//
+// start(listOf(Counter))
+
 // const undoable = (kind) => {
 //   return {
 //     init: () => {

@@ -2,6 +2,9 @@
 
 - make a v13
   - refactor v12 configure/start using middleware spec.
+    - test out deeper lifting
+      - children with children with children
+        - we need to think harder about how we initialize state. in a way that we can construct it when components are nested deeply, and in a way that we can derive children dynamically from state as we go.
     - batch dispatching
     - runtime type checking
     - refactor plugins
