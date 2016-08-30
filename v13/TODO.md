@@ -1,6 +1,13 @@
 # TODO
 
 - make a v13
+  - look at everywhere we use partial in v12 and see what comparisons need to
+    be made and where. this will give us a better and more generic idea of how
+    to use it within lazy-tree.
+  - refactor v12 configure/start using middleware spec.
+  - rename lifted to to be children because thats what they are and they dont have to be lifted
+  - try pubsub first and crawl the children
+  - save the computation for next time and compute the reduction lazily!
 
 - make React its own service with its own lazy, lift, and crawl/merge lifted children.
 
@@ -12,3 +19,32 @@
 - publish / subscribe using lazy-tree
 - hotkeys using lazy-tree
 - http using lazy-tree
+
+---
+
+all elmish handles is init / update / dispatch. theres middleware for creating
+new streams, that are then lifted together and pumped into drivers.
+
+```js
+export const configure = drivers => app => {
+  const event$ = flyd.stream()
+  const state$ = flyd.scan(
+    (state, {action, payload}) => app.update(state, action, payload),
+    app.init(),
+    event$
+  )
+  const _dispatch = (action, payload, ...args) =>
+    isFunction(payload) ?
+    event$({action, payload: payload(...args)}) :
+    event$({action, payload})
+
+  const dispatch = (action, payload) => partial(_dispatch, action, payload)
+  const pub$ = flyd.map(state => app.subscribe(state, app.publish(dispatch, state)), state$)
+
+  const handlers = drivers.map(driver => driver(app, dispatch))
+
+  flydLift((state, pub) => {
+    handlers.forEach(handler => handler(state, pub))
+  }, state$, pub$)
+}
+```
