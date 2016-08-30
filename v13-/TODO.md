@@ -1,6 +1,13 @@
 # TODO
 
 - make a v13
+  - think about when / how we construct init, update, publish, subscribe, hotkeys, and dynamic children.
+  - init
+    - this needs to be shallow first so that parent components can construct the state pass it on to their lifted children that can write to that state. one complication comes when lifted children have a lensIndex in there. In this case, the parent must be sure to create the array with that index -- preferably, the parent should just use `_init` to override the initialization the rest of the way down and manually create the state it wants. in this case, it makes sense if every lifted component constructs it children when its initialized, but then again, we should probably do this on demand as we traverse the tree...
+  - update
+    - 
+
+
   - refactor v12 configure/start using middleware spec.
     - test out deeper lifting
       - children with children with children

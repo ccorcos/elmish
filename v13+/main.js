@@ -1,4 +1,4 @@
-import { Component, lift, start, unliftAction, liftDispatch, lensQuery } from 'elmish/v13+/elmish'
+import { Component, construct, lift, start, unliftAction, liftDispatch, lensQuery } from 'elmish/v13+/elmish'
 import h from 'react-hyperscript'
 import R from 'ramda'
 
@@ -72,7 +72,6 @@ const CounterPair2 = lift(['counterPair2'], CounterPair)
 const CounterQuad = {
   children: [CounterPair1, CounterPair2],
   view: (dispatch, state, pub, props) => {
-    console.log(state)
     return h('div', [
       CounterPair1.view(dispatch, state),
       CounterPair2.view(dispatch, state),
@@ -80,7 +79,7 @@ const CounterQuad = {
   }
 }
 
-start(CounterQuad)
+// start(CounterQuad)
 
 const naiveListOf = (kind) => {
   const child = (id) => lift(['list', {id}, 'state'], kind)
@@ -90,7 +89,7 @@ const naiveListOf = (kind) => {
         nextId: 1,
         list: [{
           id: 0,
-          state: kind.init(),
+          state: construct(kind, {}),
         }],
       }
     },
@@ -100,7 +99,7 @@ const naiveListOf = (kind) => {
           nextId: state.nextId + 1,
           list: state.list.concat([{
             id: state.nextId,
-            state: kind.init(),
+            state: construct(kind, {}),
           }]),
         }
       } else if (action === 'remove') {
@@ -130,6 +129,7 @@ const naiveListOf = (kind) => {
 }
 
 // start(naiveListOf(Counter))
+start(naiveListOf(CounterQuad))
 
 // const listOf = (kind) => {
 //   const child = (id) => lift(['list', {id}, 'state'], kind)

@@ -48,12 +48,33 @@ const reduce = (name, sibling, parent, tree) => {
         tree[name],
         tree.children.map(child => reduce(name, sibling, parent, child)).reduce(sibling)
       )
-    } else {
-      return tree[name]
     }
-  } else if (tree.children) {
+    return tree[name]
+  }
+  if (tree.children) {
     return tree.children.map(child => reduce(name, sibling, parent, child)).reduce(sibling)
   }
+}
+
+// this is more of a breadth first traversal as opposed to reduce which is depth first
+// the difference being that we're carrying the result, not just mapping over the function
+export const construct = (tree, state) => {
+  const name = 'init'
+  const override = `_${name}`
+  if (tree[override]) {
+    return tree[override](state)
+  }
+  if (tree[name]) {
+    const st = tree[name](state)
+    if (tree.children) {
+      return tree.children.reduce((s, child) => construct(child, s), st)
+    }
+    return st
+  }
+  if (tree.children) {
+    return tree.children.reduce((s, child) => construct(child, s), state)
+  }
+  return state
 }
 
 const configure = plugins => {
@@ -71,17 +92,10 @@ const configure = plugins => {
 
     const baseLift = {
       children: (obj.children || []).map(child => lift(path, child)),
-      init: (state) => {
-        return R.set(
-          lens,
-          obj.init(viewState(state)),
-          state
-        )
-      },
       _init: (state) => {
         return R.set(
           lens,
-          obj.init(viewState(state)),
+          obj._init(viewState(state)),
           state
         )
       },
@@ -113,9 +127,22 @@ const configure = plugins => {
 
     const pluginLift = R.map(fn => fn(path, viewState, liftDispatch)(obj), spec.lift)
 
+    // all component needs to have an init function so they can construct all
+    // of the intermediate states for their children to write to. every component
+    // state must be an object
+    const init = obj._init ? {} : {
+      init: (state) => {
+        return R.set(
+          lens,
+          (obj.init && obj.init(viewState(state))) || {},
+          state
+        )
+      },
+    }
     return {
       // this may be useful for debugging later
       path: path.concat(obj.path || []),
+      ...init,
       ...R.pick(R.keys(obj), R.merge(baseLift, pluginLift)),
     }
   }
@@ -131,12 +158,12 @@ const configure = plugins => {
 
     const dispatch = (action, payload) => partial(_dispatch)(action, payload)
 
-    const init = reduce(
-      'init',
-      (i1, i2) => (s) => R.merge(i1(s), i2(s)),
-      (i1, i2) => (s) => R.merge(i1(s), i2(s)),
-      app
-    )
+    // const init = reduce(
+    //   'init',
+    //   (i1, i2) => (s) => R.merge(i1(s), i2(s)),
+    //   (i1, i2) => (s) => R.merge(i1(s), i2(s)),
+    //   app
+    // )
 
     const update = reduce(
       'update',
@@ -147,7 +174,7 @@ const configure = plugins => {
 
     const state$ = flyd.scan(
       (state, {action, payload}) => update(state, action, payload),
-      init({}),
+      construct(app, {}),
       event$
     )
 
