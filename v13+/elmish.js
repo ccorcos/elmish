@@ -2,7 +2,7 @@ import R from 'ramda'
 import flyd from 'flyd'
 import React from 'react'
 import ReactDOM from 'react-dom'
-import { partial } from 'elmish/v10/z'
+import { thunk } from 'lazy-tree'
 import flydLift from 'flyd/module/lift'
 import hotkeys from 'elmish/v12/hotkeys'
 import is from 'elmish/v13+/utils/is'
@@ -68,8 +68,10 @@ export const lensQuery = (path) => {
 //   )
 // )
 
+const partial = thunk(R.equals)
 const _liftDispatch = (dispatch, path, action, payload) => dispatch(liftAction(path, action), payload)
-export const liftDispatch = (dispatch, path) => partial(_liftDispatch, dispatch, path)
+export const liftDispatch =  (dispatch, path) => partial(_liftDispatch)(dispatch, path)
+
 
 const shallowCompare = (obj1, obj2) => {
   if (obj1 === obj2) {
@@ -237,7 +239,7 @@ export const configure = drivers => app => {
     event$({action, payload: payload(...args)}) :
     event$({action, payload})
 
-  const dispatch = (action, payload) => partial(_dispatch, action, payload)
+  const dispatch = (action, payload) => partial(_dispatch)(action, payload)
   const pub$ = flyd.map(state => app.subscribe(state, app.publish(dispatch, state)), state$)
 
   const handlers = drivers.map(driver => driver(app, dispatch))
