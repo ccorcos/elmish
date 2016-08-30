@@ -37,6 +37,25 @@ const partial = thunk(R.equals)
 
 const _liftDispatch = (dispatch, path, action, payload) => dispatch(liftAction(path, action), payload)
 
+const reduce = (name, sibling, parent, tree) => {
+  const override = `_${name}`
+  if (tree[override]) {
+    return tree[override]
+  }
+  if (tree[name]) {
+    if (tree.children) {
+      return parent(
+        tree[name],
+        tree.children.map(child => reduce(name, sibling, parent, child)).reduce(sibling)
+      )
+    } else {
+      return tree[name]
+    }
+  } else if (tree.children) {
+    return tree.children.map(child => reduce(name, sibling, parent, child)).reduce(sibling)
+  }
+}
+
 const configure = plugins => {
 
   const spec = plugins.reduce((acc, plugin) => ({
@@ -59,17 +78,34 @@ const configure = plugins => {
       // this may be useful for debugging later
       path: path.concat(obj.path),
       // set the state one
+      init: (state) => {
+        return R.set(
+          lens,
+          obj.init(viewState(state)),
+          state
+        )
+      },
       _init: (state) => {
         return R.set(
           lens,
-          // TODO think about init vs _init here later
-          (obj.init && obj.init()) || obj._init(viewState(state)),
+          obj.init(viewState(state)),
           state
         )
       },
       // check if the action should be routed to this component, unlift it, and
       // pass it on.
       update: (state, action, payload) => {
+        if (isLiftedAction(path, action)) {
+          return R.over(
+            lens,
+            s => obj.update(s, unliftAction(action), payload),
+            state
+          )
+        } else {
+          return state
+        }
+      },
+      _update: (state, action, payload) => {
         if (isLiftedAction(path, action)) {
           return R.over(
             lens,
@@ -95,9 +131,23 @@ const configure = plugins => {
 
     const dispatch = (action, payload) => partial(_dispatch)(action, payload)
 
+    const init = reduce(
+      'init',
+      (i1, i2) => (s) => R.merge(i1(s), i2(s)),
+      (i1, i2) => (s) => R.merge(i1(s), i2(s)),
+      app
+    )
+
+    const update = reduce(
+      'update',
+      (u1, u2) => (s, a, p) => u1(u2(s, a, p), a, p),
+      (u1, u2) => (s, a, p) => u1(u2(s, a, p), a, p),
+      app
+    )
+
     const state$ = flyd.scan(
-      (state, {action, payload}) => app.update(state, action, payload),
-      app.init(),
+      (state, {action, payload}) => update(state, action, payload),
+      init({}),
       event$
     )
 

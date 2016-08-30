@@ -32,7 +32,7 @@ const Counter1 = lift(['counter1'], Counter)
 const Counter2 = lift(['counter2'], Counter)
 
 const CounterPair = {
-  init: () => {
+  _init: () => {
     return R.pipe(
       Counter1._init,
       Counter2._init,
@@ -52,20 +52,22 @@ const CounterPair = {
   }
 }
 
-start(CounterPair)
+// start(CounterPair)
 
-// const CounterPair2 = {
-//   children: [Counter1, Counter2],
-//   view: (dispatch, state, pub, props) => {
-//     return h('div', [
-//       Counter1.view(dispatch, state),
-//       Counter2.view(dispatch, state),
-//     ])
-//   }
-// })
-//
-// // start(CounterPair2)
-//
+const CounterPair2 = {
+  children: [Counter1, Counter2],
+  init: () => ({}),
+  view: (dispatch, state, pub, props) => {
+    console.log(state)
+    return h('div', [
+      Counter1.view(dispatch, state),
+      Counter2.view(dispatch, state),
+    ])
+  }
+}
+
+start(CounterPair2)
+
 // const listOf = (kind) => {
 //   const child = (id) => lift(['list', {id}, 'state'], kind)
 //   return {
