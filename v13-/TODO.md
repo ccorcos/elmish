@@ -4,13 +4,14 @@
   - refactor v12 configure/start using middleware spec.
     - batch dispatching
     - runtime type checking
-  - rename lifted to to be children because thats what they are and they dont have to be lifted
-  - try pubsub first and crawl the children
-  - save the computation for next time and compute the reduction lazily!
+    - refactor plugins
+      - we shouldnt have to reduce subscribe twice
+      - lets lazily reduce through the component tree for publish / subscribe
+        - save the computation for next time and compute the reduction lazily!
+      - update lazy-tree to handle merging sublings and parents separately to be more generic
+    - handle dynamic children
 
-- make React its own service with its own lazy, lift, and crawl/merge lifted children.
-
-- note, children dont need to be lifted!
+- note, children dont need to be lifted -- ?
 
 
 - crawl lifted subcomponents when a side-effect or publish/subscribe is not defined for that component

@@ -47,13 +47,13 @@ const configure = plugins => {
 
   const lift = (path, obj) => {
     const lens = lensQuery(path)
-    const viewState = (state) => R.view(lens)
+    const viewState = R.view(lens)
     const liftDispatch = dispatch => partial(_liftDispatch)(dispatch, path)
 
-    const lifted = R.map(
-      fn => fn(path, viewState, liftDispatch)(obj),
-      spec.lift,
-    )
+    const lifted = R.pipe(
+      R.map(fn => fn(path, viewState, liftDispatch)(obj)),
+      R.pick(R.keys(obj))
+    )(spec.lift)
 
     return {
       // this may be useful for debugging later
@@ -110,16 +110,18 @@ const configure = plugins => {
     )
 
     flydLift((state, middleware) => {
-      R.values(drivers).forEach(driver => driver(app, dispatch)({state, ...middleware}))
+      R.values(spec.drivers).forEach(driver => driver(app, dispatch)({state, ...middleware}))
     }, state$, middleware$)
   }
 
   return { start, lift }
 }
 
+const root = document.getElementById('root')
+
 const { start, lift } = configure([
   pubsub,
-  react,
+  react(root),
 ])
 
 export { start, lift }

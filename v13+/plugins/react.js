@@ -26,17 +26,41 @@ const lazy = (view) => (dispatch, state, pub, props) => {
   return React.createElement(Lazy, {view, dispatch, state, pub, props})
 }
 
+const reduce = (name, sibling, parent, tree) => {
+  const override = `_${name}`
+  if (tree[override]) {
+    return tree[override]
+  }
+  if (tree[name]) {
+    if (tree.children) {
+      return parent(
+        tree[name],
+        tree.children.map(child => reduce(name, sibling, parent, child)).reduce(sibling)
+      )
+    } else {
+      return tree[name]
+    }
+  }
+}
+
 const plugin = root => ({
   lift: {
-    view: (path, viewState, liftDispatch) => (obj) => (dispatch, state, pub, props) =>
-      lazy(obj.view)(
+    view: (path, viewState, liftDispatch) => (obj) => (dispatch, state, pub, props) => {
+      const subscribe = reduce(
+        'subscribe',
+        (p1, p2) => (state, pub, props) => R.merge(p1(state, pub, props), p2(state, pub, props)),
+        (p1, p2) => (state, pub, props) => R.merge(p1(state, pub, props), p2(state, pub, props)),
+        obj
+      )
+      return lazy(obj.view)(
         liftDispatch(dispatch),
         viewState(state),
-        obj.subscribe(viewState(state), pub, props),
+        subscribe && subscribe(viewState(state), pub, props),
         props
-      ),
+      )
+    },
   },
-  driver: {
+  drivers: {
     view: (app, dispatch, batch) => ({state, pub}) => {
       const html = app.view(dispatch, state, pub)
       ReactDOM.render(html, root)

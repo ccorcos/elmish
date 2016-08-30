@@ -26,36 +26,36 @@ const Counter = {
   }
 }
 
-start(Counter)
+// start(Counter)
 
-// const Counter1 = lift(['counter1'], Counter)
-// const Counter2 = lift(['counter2'], Counter)
-//
-// const CounterPair = Component({
-//   init: () => {
-//     return R.pipe(
-//       Counter1.init,
-//       Counter2.init,
-//     )({})
-//   },
-//   update: (state, action, payload) => {
-//     return R.pipe(
-//       s => Counter1.update(s, action, payload),
-//       s => Counter2.update(s, action, payload)
-//     )(state)
-//   },
-//   view: (dispatch, state, pub, props) => {
-//     return h('div', [
-//       Counter1.view(dispatch, state),
-//       Counter2.view(dispatch, state),
-//     ])
-//   }
-// })
-//
-// // start(CounterPair)
-//
-// const CounterPair2 = Component({
-//   lifted: [Counter1, Counter2],
+const Counter1 = lift(['counter1'], Counter)
+const Counter2 = lift(['counter2'], Counter)
+
+const CounterPair = {
+  init: () => {
+    return R.pipe(
+      Counter1._init,
+      Counter2._init,
+    )({})
+  },
+  update: (state, action, payload) => {
+    return R.pipe(
+      s => Counter1.update(s, action, payload),
+      s => Counter2.update(s, action, payload)
+    )(state)
+  },
+  view: (dispatch, state, pub, props) => {
+    return h('div', [
+      Counter1.view(dispatch, state, pub),
+      Counter2.view(dispatch, state, pub),
+    ])
+  }
+}
+
+start(CounterPair)
+
+// const CounterPair2 = {
+//   children: [Counter1, Counter2],
 //   view: (dispatch, state, pub, props) => {
 //     return h('div', [
 //       Counter1.view(dispatch, state),
@@ -68,7 +68,7 @@ start(Counter)
 //
 // const listOf = (kind) => {
 //   const child = (id) => lift(['list', {id}, 'state'], kind)
-//   return Component({
+//   return {
 //     init: () => {
 //       return {
 //         nextId: 1,
@@ -116,7 +116,7 @@ start(Counter)
 // // start(listOf(Counter))
 //
 // const undoable = (kind) => {
-//   return Component({
+//   return {
 //     init: () => {
 //       return {
 //         time: 0,
@@ -172,7 +172,7 @@ start(Counter)
 // start(undoable(Counter))
 // // start(undoable(listOf(Counter)))
 //
-// const Score = Component({
+// const Score = {
 //   init: () => ({
 //     count : 0,
 //   }),
@@ -202,7 +202,7 @@ start(Counter)
 //   }
 // })
 //
-// const ScoreBoard = Component({
+// const ScoreBoard = {
 //   // subscribe to value from the global key-value map
 //   subscribe: (state, pub, props) => {
 //     return R.pick(['score'], pub)
@@ -216,7 +216,7 @@ start(Counter)
 //   },
 // })
 //
-// const Scorer = Component({
+// const Scorer = {
 //   subscribe: (state, pub, props) => {
 //     return R.pick(['goal'], pub)
 //   },
@@ -230,7 +230,7 @@ start(Counter)
 //
 // const GameScore = lift(['score'], Score)
 //
-// const Game = Component({
+// const Game = {
 //   init: () => {
 //     return GameScore.init({})
 //   },
@@ -260,8 +260,8 @@ start(Counter)
 // const GameScoreBoard = lift(['scoreBoard'], ScoreBoard)
 // const GameScorer = lift(['scorer'], Scorer)
 //
-// const Game2 = Component({
-//   lifted: [GameScore, GameScoreBoard, GameScorer],
+// const Game2 = {
+//   children: [GameScore, GameScoreBoard, GameScorer],
 //   view: (dispatch, state, pub, props) => {
 //     return h('div', [
 //       GameScore.view(dispatch, state),
@@ -279,10 +279,10 @@ start(Counter)
 // //   - hotkeys
 // //   - http
 // //   - graphql should work more like how publications work...
-// // - remember that if we declare lifted children then we can parse through the
+// // - remember that if we declare children children then we can parse through the
 // //   component tree to generate and lazily merge side-effects. the hard part is
 // //   when it comes to undoable and listOf since the children arent static. so we
-// //   will need some kind of dynamic lifted function that will return the lifted
+// //   will need some kind of dynamic children function that will return the children
 // //   components on demand.
 // // - ideally we could lazily generate publications and subscription, but lets
 // //   leave that for later...
