@@ -95,11 +95,11 @@ const CounterPair = {
   }),
   _update: (state, action, payload) => {
     if (isLiftedAction(action)) {
-      switch (unliftAction(action)) {
+      switch (action[0]) {
         case 'counter1':
-          return Counter1.update(state, action, payload)
+          return Counter1.update(state, action[1], payload)
         case 'counter2':
-          return Counter2.update(state, action, payload)
+          return Counter2.update(state, action[1], payload)
         default:
           throw new TypeError(`Unknown action type: ${action}`)
       }
@@ -457,5 +457,3 @@ const App = {
 // and manually hook things up ourselves, but this would involve understanding
 // some of the internals of how we lazily aggregate the everything under the
 // hood.
-
-
