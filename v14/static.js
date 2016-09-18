@@ -98,7 +98,6 @@ const Counter = {
   }
 }
 
-// TODO: not sure how this gets wired up yet and where laziness happens
 const SomethingElse = {
   subscribe: (pub) => {
     return {
@@ -118,14 +117,28 @@ const SomethingElse = {
   }
 }
 
+const mount = (component, {dispatch, state, pub}) => {
+  // this shoud definitely be lazy
+  return React.createElement(
+    component.effects.view,
+    {
+      dispatch,
+      state,
+      // TODO: need to get all pubs... from children that might be subscribing
+      pub: component.subscribe(pub)
+    }
+  )
+}
+
+// JSX can use arguments[0] to get dispatch, state, and pub and use Elmish.mount.
 const Game = {
   children: [Counter, SomethingElse],
   effects: {
     view: ({dispatch, state, pub}) => {
       return (
         <div>
-          <Counter.effects.view dispatch={dispatch} state={state} pub={pub}/>
-          <SomethingElse.effects.view dispatch={dispatch} state={state} pub={dispatch.subscribe(pub)}/>
+          <Counter/>
+          <SomethingElse/>
         </div>
       )
     }
@@ -137,3 +150,10 @@ const Game = {
 // - other effects
 // - dispatching batched events
 // - dynamic components
+
+
+// flow type could really help here.
+// learnings
+// - the normal methods get wrapped into a tree
+// - the override methods genetate the tree using the tree helper.
+// - publish/subscribe can be a v2 feature. the performance will be harder
