@@ -1,4 +1,8 @@
-// lets build the elmish start function alongside the lift and child functions
+// - polish up
+// - generic side-effects
+// - dynamic children?
+// - performance
+// - pubsub
 
 import flyd from 'flyd'
 import React from 'react'
@@ -23,8 +27,8 @@ const Lazy = React.createClass({
 })
 
 const h = (...args) => {
-  if (args[0].view && args[1].dispatch && args[1].state) {
-    return rh(Lazy, {view: args[0].view, ...args[1]})
+  if (args[0].effects && args[0].effects.view && args[1].dispatch && args[1].state) {
+    return rh(Lazy, {view: args[0].effects.view, ...args[1]})
   }
   return rh(...args)
 }
@@ -43,19 +47,19 @@ const wrapActionType = type =>
 // }
 
 const makeInit = app => {
-  if (app._init) {
-    return app._init
+  if (app.state && app.state._init) {
+    return app.state._init
   }
   return R.reduce(
     (st, child) => R.merge(st, makeInit(child)),
-    app.init || {},
+    app.state && app.state.init || {},
     app.children || []
   )
 }
 
 const makeUpdate = app => {
-  if (app._update) {
-    return app._update
+  if (app.state && app.state._update) {
+    return app.state._update
   }
   return (state, action) => {
     return R.reduce(
@@ -67,7 +71,7 @@ const makeUpdate = app => {
       // so something like {...state, count: state.count + 1} when you'd expect
       // count to be the only thing in the state...
       (st, child) => makeUpdate(child)(st, action),
-      app.update ? app.update(state, action) : state,
+      (app.state && app.state.update) ? app.state.update(state, action) : state,
       app.children || []
     )
   }
@@ -93,7 +97,7 @@ const start = (app) => {
 
   const view$ = flyd.map(state => {
     console.log('view$', state)
-    return app.view({dispatch, state})
+    return app.effects.view({dispatch, state})
   }, state$)
 
   // declarative side-effect drivers
@@ -104,47 +108,55 @@ const start = (app) => {
 }
 
 const Counter = {
-  init: {
-    count : 0,
+  state: {
+    init: {
+      count : 0,
+    },
+    update: (state, {type, payload}) => {
+      if (type[0] === 'inc') {
+        return { count: state.count + 1 }
+      }
+      if (type[0] === 'dec') {
+        return { count: state.count - 1 }
+      }
+      return state
+    },
   },
-  update: (state, {type, payload}) => {
-    if (type[0] === 'inc') {
-      return { count: state.count + 1 }
-    }
-    if (type[0] === 'dec') {
-      return { count: state.count - 1 }
-    }
-    return state
+  effects: {
+    view: ({dispatch, state, props}) => {
+      return h('div.counter', [
+        h('button.dec', {onClick: dispatch('dec')}, '-'),
+        h('span.count', state.count),
+        h('button.inc', {onClick: dispatch('inc')}, '+'),
+      ])
+    },
   },
-  view: ({dispatch, state, props}) => {
-    return h('div.counter', [
-      h('button.dec', {onClick: dispatch('dec')}, '-'),
-      h('span.count', state.count),
-      h('button.inc', {onClick: dispatch('inc')}, '+'),
-    ])
-  }
 }
 
 const targetValue = e => e.target.value
 
 const Username = {
-  init: {
-    username: '',
-  },
-  update: (state, {type, payload}) => {
-    if (type[0] === 'username/change') {
-      return {
-        username: payload,
+  state: {
+    init: {
+      username: '',
+    },
+    update: (state, {type, payload}) => {
+      if (type[0] === 'username/change') {
+        return {
+          username: payload,
+        }
       }
-    }
-    return state
+      return state
+    },
   },
-  view: ({dispatch, state, props}) => {
-    return h('input.username', {
-      value: state.username,
-      onChange: dispatch('username/change', targetValue)
-    })
-  }
+  effects: {
+    view: ({dispatch, state, props}) => {
+      return h('input.username', {
+        value: state.username,
+        onChange: dispatch('username/change', targetValue)
+      })
+    },
+  },
 }
 
 // start(Counter)
@@ -155,12 +167,14 @@ const Username = {
 
 const App = {
   children: [Counter, Username],
-  view: ({dispatch, state}) => {
-    return h('div.app', [
-      h(Counter, {dispatch, state}),
-      h(Username, {dispatch, state}),
-    ])
-  }
+  effects: {
+    view: ({dispatch, state}) => {
+      return h('div.app', [
+        h(Counter, {dispatch, state}),
+        h(Username, {dispatch, state}),
+      ])
+    },
+  },
 }
 
 // this currently only works if we merge the states returned from the update
@@ -175,25 +189,29 @@ const mapDispatch = partial(_mapDispatch)
 
 const lift = (key, app) => {
   return {
-    _init: {
-      [key]: makeInit(app),
-    },
-    _update: (state, {type, payload}) => {
-      if (type[0] === key) {
-        return {
-          ...state,
-          [key]: makeUpdate(app)(state[key], {type: type[1], payload})
+    state: {
+      _init: {
+        [key]: makeInit(app),
+      },
+      _update: (state, {type, payload}) => {
+        if (type[0] === key) {
+          return {
+            ...state,
+            [key]: makeUpdate(app)(state[key], {type: type[1], payload})
+          }
         }
-      }
-      return state
+        return state
+      },
     },
-    view: ({dispatch, state, props}) => {
-      return app.view({
-        dispatch: mapDispatch(key, dispatch),
-        state: state[key],
-        props,
-      })
-    }
+    effects: {
+      view: ({dispatch, state, props}) => {
+        return app.effects.view({
+          dispatch: mapDispatch(key, dispatch),
+          state: state[key],
+          props,
+        })
+      },
+    },
   }
 }
 
@@ -202,12 +220,14 @@ const Username1 = lift('username', Username)
 
 const App2 = {
   children: [Counter1, Username1],
-  view: ({dispatch, state}) => {
-    return h('div.app', [
-      h(Counter1, {dispatch, state}),
-      h(Username1, {dispatch, state}),
-    ])
-  }
+  effects: {
+    view: ({dispatch, state}) => {
+      return h('div.app', [
+        h(Counter1, {dispatch, state}),
+        h(Username1, {dispatch, state}),
+      ])
+    },
+  },
 }
 
 // start(App2)
@@ -217,19 +237,15 @@ const twoOf = app => {
   const app2 = lift('version2', app)
   return {
     children: [app1, app2],
-    view: ({dispatch, state}) => {
-      return h('div.two-of', [
-        h(app1, {dispatch, state}),
-        h(app2, {dispatch, state}),
-      ])
-    }
+    effects: {
+      view: ({dispatch, state}) => {
+        return h('div.two-of', [
+          h(app1, {dispatch, state}),
+          h(app2, {dispatch, state}),
+        ])
+      },
+    },
   }
 }
 
 start(twoOf(App2))
-
-// - polish up
-// - generic side-effects
-// - dynamic children?
-// - performance
-// - pubsub
