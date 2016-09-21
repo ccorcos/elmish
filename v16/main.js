@@ -1,3 +1,23 @@
+// next time:
+// grab hotkeys from v13+, _hotkeys should return a lazy-tree and hotkeys should
+// return an object. then in the driver we can lazily reduce over the tree.
+// we'll need to figure out how to deal with react in a more generic way. using
+// _view is definitely a sound requirement. using the custom h helper is
+// reasonable as well. but being able to generically lift side-effects is nice.
+// we cant do without lifting these fuctions because mapDispatch, etc...
+// i think it makes sense to favor a single format for lazy-tree for all side-effects
+// so maybe we could have a less hacky way to get react to comply...
+
+// lets add batches action funtionality for the sake of hotkeys. we could do this
+// by ensuring everything in the `action$` is an array of actions. but we also
+// want to be able to batch the functions that dispatch actions. for example, what
+// if we want to call two callback hooks at the same time that both dispatch actions?
+
+// lets refactor the api to make things pretty agnostic of the exact layout
+// or formatting, basically just setters and getters for effects... and what not
+ // lets also see if we can add flowtype before going much further
+
+
 // - polish up
 // - generic side-effects
 // - dynamic children?
@@ -5,36 +25,40 @@
 // - batch actions
 // - pubsub
 
+import R from 'ramda'
 import flyd from 'flyd'
-import React from 'react'
-import ReactDOM from 'react-dom'
-import rh from 'react-hyperscript'
 import is from 'elmish/v13+/utils/is'
 import { thunk, node } from 'lazy-tree'
-import R from 'ramda'
+import ReactDriver, { h } from 'elmish/v16/drivers/react'
 
-import ReactDriver from 'elmish/v16/drivers/react'
-
-const Lazy = React.createClass({
-  shouldComponentUpdate(nextProps) {
-    return !(
-      (nextProps.view === this.props.view) &&
-      (nextProps.state === this.props.state) &&
-      // (shallow(nextProps.props, this.props.props)) &&
-      (nextProps.dispatch.equals(this.props.dispatch))
-    )
-  },
-  render() {
-    return this.props.view(this.props)
+// crawls children and merges all initial states
+const computeInit = app => {
+  if (app.state && app.state._init) {
+    return app.state._init
   }
-})
-
-const h = (...args) => {
-  if (args[0].effects && args[0].effects._view && args[1].dispatch && args[1].state) {
-    return rh(Lazy, {view: args[0].effects._view, ...args[1]})
-  }
-  return rh(...args)
+  return (app.children || []).reduce(
+    (st, child) => ({...st, ...computeInit(child)}),
+    app.state && app.state.init || {},
+  )
 }
+
+// crawls children and computes the update method that routes actions
+// through all of the of the children update functions.
+// NOTE: if you're component's update function does not return the keys
+// it does not mutate, then you'll only see the state return by the last
+// child's update because we've merged the children states in `computeInit`
+const computeUpdate = app => {
+  if (app.state && app.state._update) {
+    return app.state._update
+  }
+  return (state, action) => {
+    return (app.children || []).reduce(
+      (st, child) => computeUpdate(child)(st, action),
+      (app.state && app.state.update) ? app.state.update(state, action) : state,
+    )
+  }
+}
+
 
 const partial = thunk(R.equals)
 const partial2 = thunk((a,b) => a === b)
@@ -42,52 +66,14 @@ const partial2 = thunk((a,b) => a === b)
 const wrapActionType = type =>
   is.array(type) ? type : [type]
 
-// const makeInit = app => {
-//   if (app._init) {
-//     return app._init
-//   }
-//   return node(app.init || {}, (app.children || []).map(child => partial2(makeInit)(child)))
-// }
-
-const makeInit = app => {
-  if (app.state && app.state._init) {
-    return app.state._init
-  }
-  return R.reduce(
-    (st, child) => R.merge(st, makeInit(child)),
-    app.state && app.state.init || {},
-    app.children || []
-  )
-}
-
-const makeUpdate = app => {
-  if (app.state && app.state._update) {
-    return app.state._update
-  }
-  return (state, action) => {
-    return R.reduce(
-      // (st, child) => R.merge(st, makeUpdate(child)(st, action)),
-      // if we merge, then multiple children dont have to be lifted, but I think
-      // thats probably a good thing. this is also less performant. it would work
-      // if we only used updates rather than returning an entirely new state. thats
-      // just a little awkward when you look at the update method and you have to
-      // so something like {...state, count: state.count + 1} when you'd expect
-      // count to be the only thing in the state...
-      (st, child) => makeUpdate(child)(st, action),
-      (app.state && app.state.update) ? app.state.update(state, action) : state,
-      app.children || []
-    )
-  }
-}
-
 const configure = drivers => app => {
   const action$ = flyd.stream()
   const state$ = flyd.scan(
     (state, action) => {
       console.log("scan", state, action)
-      return makeUpdate(app)(state, action)
+      return computeUpdate(app)(state, action)
     },
-    makeInit(app),
+    computeInit(app),
     action$
   )
 
@@ -124,9 +110,9 @@ const Counter = {
   },
   effects: {
     _view: ({dispatch, state, props}) => {
-      return h('div.counter', [
+      return h('div.counter', {}, [
         h('button.dec', {onClick: dispatch('dec')}, '-'),
-        h('span.count', state.count),
+        h('span.count', {}, state.count),
         h('button.inc', {onClick: dispatch('inc')}, '+'),
       ])
     },
@@ -169,7 +155,7 @@ const App = {
   children: [Counter, Username],
   effects: {
     _view: ({dispatch, state}) => {
-      return h('div.app', [
+      return h('div.app', {}, [
         h(Counter, {dispatch, state}),
         h(Username, {dispatch, state}),
       ])
@@ -191,13 +177,13 @@ const lift = (key, app) => {
   return {
     state: {
       _init: {
-        [key]: makeInit(app),
+        [key]: computeInit(app),
       },
       _update: (state, {type, payload}) => {
         if (type[0] === key) {
           return {
             ...state,
-            [key]: makeUpdate(app)(state[key], {type: type[1], payload})
+            [key]: computeUpdate(app)(state[key], {type: type[1], payload})
           }
         }
         return state
@@ -236,7 +222,7 @@ const App2 = {
   children: [Counter1, Username1],
   effects: {
     _view: ({dispatch, state}) => {
-      return h('div.app', [
+      return h('div.app', {}, [
         h(Counter1, {dispatch, state}),
         h(Username1, {dispatch, state}),
       ])
@@ -253,7 +239,7 @@ const twoOf = app => {
     children: [app1, app2],
     effects: {
       _view: ({dispatch, state}) => {
-        return h('div.two-of', [
+        return h('div.two-of', {}, [
           h(app1, {dispatch, state}),
           h(app2, {dispatch, state}),
         ])

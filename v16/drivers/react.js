@@ -22,7 +22,7 @@ const Lazy = React.createClass({
 // a helper function for generating React elements using hyperscript syntax
 export const h = (value, props, children) => {
   if (isPlainObject(value)) {
-    return React.createElement(Lazy, {view: value.view, ...props}, children)
+    return React.createElement(Lazy, {view: value.effects._view, ...props}, children)
   }
   if (isString(value)) {
     const classNameList = value.match(/(\.\w+)/g)
@@ -30,9 +30,10 @@ export const h = (value, props, children) => {
     const id = idList && idList[0].slice(1)
     const idList = value.match(/(\.\w+)/)
     const tag = value.match(/^\w+/)[0]
-    return React.creatElement(tag, {...props, id, className}, children)
+    const args = [tag, {...props, id, className}].concat(children)
+    return React.createElement(...args)
   }
-  return React.creatElement(value, props, children)
+  return React.createElement(value, props, children)
 }
 
 const driver = root => (app, dispatch) => state => {
