@@ -203,15 +203,13 @@ const lift = (key, app) => {
         return state
       },
     },
-    effects: {
-      view: ({dispatch, state, props}) => {
-        return app.effects.view({
-          dispatch: mapDispatch(key, dispatch),
-          state: state[key],
-          props,
-        })
-      },
-    },
+    effects: R.map(effect => ({dispatch, state, props}) => {
+      return effect({
+        dispatch: mapDispatch(key, dispatch),
+        state: state[key],
+        props,
+      })
+    }, app.effects || {}),
   }
 }
 
