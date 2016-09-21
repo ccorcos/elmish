@@ -23,4 +23,6 @@
 // import 'elmish/v10/main.js'
 // import 'elmish/v11/main.js'
 // import 'elmish/v12/main.js'
-import 'elmish/v13+/main.js'
+// import 'elmish/v13+/main.js'
+
+import 'elmish/v15/main2.js'

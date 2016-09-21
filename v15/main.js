@@ -1,3 +1,8 @@
+// some guiding throughts here.
+// lift simply contextualized a component to a certain key path
+// _overrides must return a tree
+//
+
 const Counter = {
   init: {
     count : 0,
@@ -20,27 +25,35 @@ const Counter = {
   }
 }
 
+const _liftDispatch = (dispatch, key, action, payload) =>
+  dispatch([key, action], payload)
+
+const liftDispatch = (dispatch, key) =>
+  partial(_liftDispatch)(dispatch, key)
+
 const Counter1 = {
-  _init: {
+  init: {
     counter1: Counter.init,
   },
-  _update: (state, action, payload) => {
+  update: (state, action, payload) => {
     if (action[0] === 'counter1') {
       return Counter.update(state, action[1], payload)
     }
     // error
   },
   view: ({dispatch, state, props}) => {
-    return h('div.counter', [
-      h('button.dec', {onClick: dispatch('dec')}, '-'),
-      h('span.count', state.count),
-      h('button.inc', {onClick: dispatch('inc')}, '+'),
-    ])
+    return Counter.view({
+      dispatch: liftDispatch(dispatch, key),
+      state: state.counter1,
+      props,
+    })
   }
 }
 
 const lift = (key, component) => {
-  //  TODO
+  return {
+
+  }
 }
 
 const Counter2 = lift('counter2', Counter)
@@ -56,15 +69,14 @@ const CounterPair = {
 }
 
 const _CounterPair = {
-  _init: init({}, [
+  _init: g({}, [
     Counter1,
     Counter2,
   ]),
-  _update: update([
-      Counter1,
-      Counter2,
-    ])
-  }
+  _update: g([
+    Counter1,
+    Counter2,
+  ]),
   _view: effect(({dispatch, state}) => {
     return (
       <div>
