@@ -1,33 +1,98 @@
 // lets build the elmish start function alongside the lift and child functions
 
 import flyd from 'flyd'
+import React from 'react'
 import ReactDOM from 'react-dom'
-import h from 'react-hyperscript'
+import rh from 'react-hyperscript'
 import is from 'elmish/v13+/utils/is'
-import { thunk } from 'lazy-tree'
+import { thunk, node } from 'lazy-tree'
 import R from 'ramda'
 
+const Lazy = React.createClass({
+  shouldComponentUpdate(nextProps) {
+    return !(
+      (nextProps.view === this.props.view) &&
+      (nextProps.state === this.props.state) &&
+      // (shallow(nextProps.props, this.props.props)) &&
+      (nextProps.dispatch.equals(this.props.dispatch))
+    )
+  },
+  render() {
+    return this.props.view(this.props)
+  }
+})
+
+const h = (...args) => {
+  if (args[0].view && args[1].dispatch && args[1].state) {
+    return rh(Lazy, {view: args[0].view, ...args[1]})
+  }
+  return rh(...args)
+}
+
 const partial = thunk(R.equals)
+const partial2 = thunk((a,b) => a === b)
 
 const wrapActionType = type =>
   is.array(type) ? type : [type]
 
+// const makeInit = app => {
+//   if (app._init) {
+//     return app._init
+//   }
+//   return node(app.init || {}, (app.children || []).map(child => partial2(makeInit)(child)))
+// }
+
+const makeInit = app => {
+  if (app._init) {
+    return app._init
+  }
+  return R.reduce(
+    (st, child) => R.merge(st, makeInit(child)),
+    app.init || {},
+    app.children || []
+  )
+}
+
+const makeUpdate = app => {
+  if (app._update) {
+    return app._update
+  }
+  return (state, action) => {
+    return R.reduce(
+      // (st, child) => R.merge(st, makeUpdate(child)(st, action)),
+      // if we merge, then multiple children dont have to be lifted, but I think
+      // thats probably a good thing. this is also less performant. it would work
+      // if we only used updates rather than returning an entirely new state. thats
+      // just a little awkward when you look at the update method and you have to
+      // so something like {...state, count: state.count + 1} when you'd expect
+      // count to be the only thing in the state...
+      (st, child) => makeUpdate(child)(st, action),
+      app.update ? app.update(state, action) : state,
+      app.children || []
+    )
+  }
+}
+
 const start = (app) => {
   const action$ = flyd.stream()
-  const state$ = flyd.scan((state, action) => {
-    // console.log("scan", state, action)
-    return app.update(state, action)
-  }, app.init, action$)
+  const state$ = flyd.scan(
+    (state, action) => {
+      console.log("scan", state, action)
+      return makeUpdate(app)(state, action)
+    },
+    makeInit(app),
+    action$
+  )
 
   const _dispatch = (type, payload, ...args) =>
     is.function(payload) ?
     action$({type: wrapActionType(type), payload: payload(...args)}) :
     action$({type: wrapActionType(type), payload})
 
-  const dispatch = (action, payload) => partial(_dispatch)(action, payload)
+  const dispatch = partial(_dispatch)
 
   const view$ = flyd.map(state => {
-    // console.log('view$', state)
+    console.log('view$', state)
     return app.view({dispatch, state})
   }, state$)
 
@@ -49,7 +114,7 @@ const Counter = {
     if (type[0] === 'dec') {
       return { count: state.count - 1 }
     }
-    // error
+    return state
   },
   view: ({dispatch, state, props}) => {
     return h('div.counter', [
@@ -72,6 +137,7 @@ const Username = {
         username: payload,
       }
     }
+    return state
   },
   view: ({dispatch, state, props}) => {
     return h('input.username', {
@@ -81,4 +147,83 @@ const Username = {
   }
 }
 
-start(Username)
+// start(Counter)
+// start(Username)
+
+// now the question is how do we handle children and overriding now
+// lifting comes later ;)
+
+const App = {
+  children: [Counter, Username],
+  view: ({dispatch, state}) => {
+    return h('div.app', [
+      h(Counter, {dispatch, state}),
+      h(Username, {dispatch, state}),
+    ])
+  }
+}
+
+// this currently only works if we merge the states returned from the update
+// methods, so for now, lets try to figure out how lift works.
+// start(App)
+
+const _mapDispatch = (key, dispatch, type, payload) => {
+  return dispatch([key, is.array(type) ? type : [type]], payload)
+}
+
+const mapDispatch = partial(_mapDispatch)
+
+const lift = (key, app) => {
+  return {
+    _init: {
+      [key]: makeInit(app),
+    },
+    _update: (state, {type, payload}) => {
+      if (type[0] === key) {
+        return {
+          ...state,
+          [key]: makeUpdate(app)(state[key], {type: type[1], payload})
+        }
+      }
+      return state
+    },
+    view: ({dispatch, state, props}) => {
+      return app.view({
+        dispatch: mapDispatch(key, dispatch),
+        state: state[key],
+        props,
+      })
+    }
+  }
+}
+
+const Counter1 = lift('counter', Counter)
+const Username1 = lift('username', Username)
+
+const App2 = {
+  children: [Counter1, Username1],
+  view: ({dispatch, state}) => {
+    return h('div.app', [
+      h(Counter1, {dispatch, state}),
+      h(Username1, {dispatch, state}),
+    ])
+  }
+}
+
+// start(App2)
+
+const twoOf = app => {
+  const app1 = lift('version1', app)
+  const app2 = lift('version2', app)
+  return {
+    children: [app1, app2],
+    view: ({dispatch, state}) => {
+      return h('div.two-of', [
+        h(app1, {dispatch, state}),
+        h(app2, {dispatch, state}),
+      ])
+    }
+  }
+}
+
+start(twoOf(App2))
