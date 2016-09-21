@@ -1,7 +1,8 @@
 // - polish up
 // - generic side-effects
 // - dynamic children?
-// - performance
+// - lazy performance
+// - batch actions
 // - pubsub
 
 import flyd from 'flyd'
@@ -11,6 +12,8 @@ import rh from 'react-hyperscript'
 import is from 'elmish/v13+/utils/is'
 import { thunk, node } from 'lazy-tree'
 import R from 'ramda'
+
+import ReactDriver from 'elmish/v16/drivers/react'
 
 const Lazy = React.createClass({
   shouldComponentUpdate(nextProps) {
@@ -27,8 +30,8 @@ const Lazy = React.createClass({
 })
 
 const h = (...args) => {
-  if (args[0].effects && args[0].effects.view && args[1].dispatch && args[1].state) {
-    return rh(Lazy, {view: args[0].effects.view, ...args[1]})
+  if (args[0].effects && args[0].effects._view && args[1].dispatch && args[1].state) {
+    return rh(Lazy, {view: args[0].effects._view, ...args[1]})
   }
   return rh(...args)
 }
@@ -77,7 +80,7 @@ const makeUpdate = app => {
   }
 }
 
-const start = (app) => {
+const configure = drivers => app => {
   const action$ = flyd.stream()
   const state$ = flyd.scan(
     (state, action) => {
@@ -95,17 +98,14 @@ const start = (app) => {
 
   const dispatch = partial(_dispatch)
 
-  const view$ = flyd.map(state => {
-    console.log('view$', state)
-    return app.effects.view({dispatch, state})
+  flyd.on(state => {
+    drivers.forEach(driver => driver(app, dispatch)(state))
   }, state$)
-
-  // declarative side-effect drivers
-  const root = document.getElementById('root')
-  flyd.on(vdom => {
-    ReactDOM.render(vdom, root)
-  }, view$)
 }
+
+const start = configure([
+  ReactDriver(document.getElementById('root'))
+])
 
 const Counter = {
   state: {
@@ -123,7 +123,7 @@ const Counter = {
     },
   },
   effects: {
-    view: ({dispatch, state, props}) => {
+    _view: ({dispatch, state, props}) => {
       return h('div.counter', [
         h('button.dec', {onClick: dispatch('dec')}, '-'),
         h('span.count', state.count),
@@ -150,7 +150,7 @@ const Username = {
     },
   },
   effects: {
-    view: ({dispatch, state, props}) => {
+    _view: ({dispatch, state, props}) => {
       return h('input.username', {
         value: state.username,
         onChange: dispatch('username/change', targetValue)
@@ -168,7 +168,7 @@ const Username = {
 const App = {
   children: [Counter, Username],
   effects: {
-    view: ({dispatch, state}) => {
+    _view: ({dispatch, state}) => {
       return h('div.app', [
         h(Counter, {dispatch, state}),
         h(Username, {dispatch, state}),
@@ -203,13 +203,29 @@ const lift = (key, app) => {
         return state
       },
     },
-    effects: R.map(effect => ({dispatch, state, props}) => {
-      return effect({
-        dispatch: mapDispatch(key, dispatch),
-        state: state[key],
-        props,
-      })
-    }, app.effects || {}),
+    effects: Object.keys(app.effects || {}).map(name => {
+      if (name[0] === '_') {
+        return {
+          [name]: ({dispatch, state, props}) => {
+            return app.effects[name]({
+              dispatch: mapDispatch(key, dispatch),
+              state: state[key],
+              props,
+            })
+          },
+        }
+      }
+      // TODO this should return a lazy tree!
+      return {
+        [name]: ({dispatch, state, props}) => {
+          return app.effects[name]({
+            dispatch: mapDispatch(key, dispatch),
+            state: state[key],
+            props,
+          })
+        },
+      }
+    }).reduce(R.merge)
   }
 }
 
@@ -219,7 +235,7 @@ const Username1 = lift('username', Username)
 const App2 = {
   children: [Counter1, Username1],
   effects: {
-    view: ({dispatch, state}) => {
+    _view: ({dispatch, state}) => {
       return h('div.app', [
         h(Counter1, {dispatch, state}),
         h(Username1, {dispatch, state}),
@@ -236,7 +252,7 @@ const twoOf = app => {
   return {
     children: [app1, app2],
     effects: {
-      view: ({dispatch, state}) => {
+      _view: ({dispatch, state}) => {
         return h('div.two-of', [
           h(app1, {dispatch, state}),
           h(app2, {dispatch, state}),

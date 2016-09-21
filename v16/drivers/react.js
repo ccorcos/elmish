@@ -1,3 +1,4 @@
+import flyd from 'flyd'
 import React from 'react'
 import ReactDOM from 'react-dom'
 import { shallow } from 'elmish/v16/utils/compare'
@@ -34,34 +35,9 @@ export const h = (value, props, children) => {
   return React.creatElement(value, props, children)
 }
 
+const driver = root => (app, dispatch) => state => {
+  const vdom = app.effects._view({dispatch, state})
+  ReactDOM.render(vdom, root)
+}
 
-
-
-
-
-const plugin = root => ({
-  lift: {
-    view: (path, viewState, liftDispatch) => (obj) => (dispatch, state, pub, props) => {
-      const subscribe = reduce(
-        'subscribe',
-        (p1, p2) => (state, pub, props) => R.merge(p1(state, pub, props), p2(state, pub, props)),
-        (p1, p2) => (state, pub, props) => R.merge(p1(state, pub, props), p2(state, pub, props)),
-        obj
-      )
-      return lazy(obj.view)(
-        liftDispatch(dispatch),
-        viewState(state),
-        subscribe && subscribe(viewState(state), pub, props),
-        props
-      )
-    },
-  },
-  drivers: {
-    view: (app, dispatch, batch) => ({state, pub}) => {
-      const html = app.view(dispatch, state, pub)
-      ReactDOM.render(html, root)
-    }
-  }
-})
-
-export default plugin
+export default driver
