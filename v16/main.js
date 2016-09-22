@@ -29,106 +29,9 @@ import ReactDriver, { h } from 'elmish/v16/drivers/react'
 import HotkeysDriver from 'elmish/v16/drivers/hotkeys'
 import { shallow } from 'elmish/v16/utils/compare'
 
-// crawls children and merges all initial states
-const computeInit = app => {
-  if (app.state && app.state._init) {
-    return app.state._init
-  }
-  return (app.children || []).reduce(
-    (st, child) => ({...st, ...computeInit(child)}),
-    app.state && app.state.init || {},
-  )
-}
-
-// crawls children and computes the update method that routes actions
-// through all of the of the children update functions.
-// NOTE: if you're component's update function does not return the keys
-// it does not mutate, then you'll only see the state return by the last
-// child's update because we've merged the children states in `computeInit`
-const computeUpdate = app => {
-  if (app.state && app.state._update) {
-    return app.state._update
-  }
-  return (state, action) => {
-    return (app.children || []).reduce(
-      (st, child) => computeUpdate(child)(st, action),
-      (app.state && app.state.update) ? app.state.update(state, action) : state,
-    )
-  }
-}
 
 
 
-
-
-
-const effectThunk = thunk((args1, args2) => {
-  return args1[0] === args2[0] // name
-      && args1[1] === args2[1] // child
-      && args1[2].state === args2[2].state
-      && (args1[2].dispatch.__type === 'thunk'
-      ? args1[2].dispatch.equals(args2[2].dispatch)
-      : args1[2].dispatch === args2[2].dispatch)
-      && shallow(args1[2].props, args2[2].props)
-})
-
-const computeEffectHelper = (f,a,b,c) => f(a,b)(c)
-
-const computeEffect = (name, app) => {
-  if (app.effects && app.effects[`_${name}`]) {
-    return app.effects[`_${name}`]
-  }
-  return ({dispatch, state, props}) => {
-    // console.log('effects', app.effects, app)
-    return node(
-      (app.effects && app.effects[name]) ?
-      app.effects[name]({dispatch, state, props}) :
-      {},
-      (app.children || []).map(child => {
-        // console.log('child', child.effects)
-        return effectThunk(computeEffectHelper)(computeEffect, name, child, {dispatch, state, props})
-      })
-    )
-  }
-}
-
-
-
-
-
-
-
-const partial = thunk(R.equals)
-const partial2 = thunk((a,b) => a === b)
-
-const wrapActionType = type =>
-  is.array(type) ? type : [type]
-
-const configure = drivers => app => {
-  const action$ = flyd.stream()
-
-  const state$ = flyd.scan(
-    (state, action) => {
-      console.log("scan", state, action)
-      return computeUpdate(app)(state, action)
-    },
-    computeInit(app),
-    action$
-  )
-
-  const _dispatch = (type, payload, ...args) =>
-    is.function(payload) ?
-    action$({type: wrapActionType(type), payload: payload(...args)}) :
-    action$({type: wrapActionType(type), payload})
-
-  const dispatch = partial(_dispatch)
-
-  const initializedDrivers = drivers.map(driver => driver(app, dispatch))
-
-  flyd.on(state => {
-    initializedDrivers.forEach(driver => driver(state))
-  }, state$)
-}
 
 const start = configure([
   ReactDriver(document.getElementById('root')),
@@ -215,17 +118,17 @@ const Username = {
 // now the question is how do we handle children and overriding now
 // lifting comes later ;)
 
-const App = {
-  children: [Counter, Username],
-  effects: {
-    _view: ({dispatch, state}) => {
-      return h('div.app', {}, [
-        h(Counter, {dispatch, state}),
-        h(Username, {dispatch, state}),
-      ])
-    },
-  },
-}
+// const App = {
+//   children: [Counter, Username],
+//   effects: {
+//     _view: ({dispatch, state}) => {
+//       return h('div.app', {}, [
+//         h(Counter, {dispatch, state}),
+//         h(Username, {dispatch, state}),
+//       ])
+//     },
+//   },
+// }
 
 // this currently only works if we merge the states returned from the update
 // methods, so for now, lets try to figure out how lift works.
