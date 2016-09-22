@@ -1,35 +1,33 @@
-// next time:
-// grab hotkeys from v13+, _hotkeys should return a lazy-tree and hotkeys should
-// return an object. then in the driver we can lazily reduce over the tree.
-// we'll need to figure out how to deal with react in a more generic way. using
-// _view is definitely a sound requirement. using the custom h helper is
-// reasonable as well. but being able to generically lift side-effects is nice.
-// we cant do without lifting these fuctions because mapDispatch, etc...
-// i think it makes sense to favor a single format for lazy-tree for all side-effects
-// so maybe we could have a less hacky way to get react to comply...
+// cleanup code
+// solidify the pattern.
+// - overridden effects should return a lazy tree
+// - normal effects are the value in the lazy tree
+// - if you only use overrides, you can build your own structure like with react
+//   but you dont get the help of putting it all together for you under the hood
+// - lift will localize state, and mapDispatch for all the effects, init, update
+//   etc. but you need to make sure to crawl the children keys to see all the
+//   side-effects. children also MUST BE LIFTED. otherwise some quirks can happen
+//   with namespace collisions and missing children effects when lifting.
 
-// lets add batches action funtionality for the sake of hotkeys. we could do this
-// by ensuring everything in the `action$` is an array of actions. but we also
-// want to be able to batch the functions that dispatch actions. for example, what
-// if we want to call two callback hooks at the same time that both dispatch actions?
+// some potential issues
+// - the effect thunk doesnt entirely work because a lifted child only cares
+//   about its part of the state. so we'll need to figure that out later
 
-// lets refactor the api to make things pretty agnostic of the exact layout
-// or formatting, basically just setters and getters for effects... and what not
- // lets also see if we can add flowtype before going much further
-
-
-// - polish up
-// - generic side-effects
-// - dynamic children?
+// things to do next
+// - clean up the hot keys driver
+// - add batch update functionality with some way of merging dispatches.
+// - build some other side effect drivers like http and giphy example
+// - dynamic children example with listOf
 // - lazy performance
-// - batch actions
 // - pubsub
 
 import R from 'ramda'
 import flyd from 'flyd'
 import is from 'elmish/v13+/utils/is'
-import { thunk, node } from 'lazy-tree'
+import node, { thunk, reduce } from 'lazy-tree'
 import ReactDriver, { h } from 'elmish/v16/drivers/react'
+import HotkeysDriver from 'elmish/v16/drivers/hotkeys'
+import { shallow } from 'elmish/v16/utils/compare'
 
 // crawls children and merges all initial states
 const computeInit = app => {
@@ -60,6 +58,46 @@ const computeUpdate = app => {
 }
 
 
+
+
+
+
+const effectThunk = thunk((args1, args2) => {
+  return args1[0] === args2[0] // name
+      && args1[1] === args2[1] // child
+      && args1[2].state === args2[2].state
+      && (args1[2].dispatch.__type === 'thunk'
+      ? args1[2].dispatch.equals(args2[2].dispatch)
+      : args1[2].dispatch === args2[2].dispatch)
+      && shallow(args1[2].props, args2[2].props)
+})
+
+const computeEffectHelper = (f,a,b,c) => f(a,b)(c)
+
+const computeEffect = (name, app) => {
+  if (app.effects && app.effects[`_${name}`]) {
+    return app.effects[`_${name}`]
+  }
+  return ({dispatch, state, props}) => {
+    // console.log('effects', app.effects, app)
+    return node(
+      (app.effects && app.effects[name]) ?
+      app.effects[name]({dispatch, state, props}) :
+      {},
+      (app.children || []).map(child => {
+        // console.log('child', child.effects)
+        return effectThunk(computeEffectHelper)(computeEffect, name, child, {dispatch, state, props})
+      })
+    )
+  }
+}
+
+
+
+
+
+
+
 const partial = thunk(R.equals)
 const partial2 = thunk((a,b) => a === b)
 
@@ -68,6 +106,7 @@ const wrapActionType = type =>
 
 const configure = drivers => app => {
   const action$ = flyd.stream()
+
   const state$ = flyd.scan(
     (state, action) => {
       console.log("scan", state, action)
@@ -84,13 +123,32 @@ const configure = drivers => app => {
 
   const dispatch = partial(_dispatch)
 
+  const initializedDrivers = drivers.map(driver => driver(app, dispatch))
+
   flyd.on(state => {
-    drivers.forEach(driver => driver(app, dispatch)(state))
+    initializedDrivers.forEach(driver => driver(state))
   }, state$)
 }
 
 const start = configure([
-  ReactDriver(document.getElementById('root'))
+  ReactDriver(document.getElementById('root')),
+  (app, dispatch) => {
+    const driver = HotkeysDriver(app, dispatch)
+    return state => {
+      // console.log("compute")
+      const effect = computeEffect('hotkeys', app)
+      // console.log("evaluate")
+      const tree = effect({state, dispatch})
+      // console.log("reduce")
+      const computation = reduce((a,b) => {
+        // console.log(a, b)
+        return R.mergeWith((x,y) => () => {x();y()}, a,b)
+      }, undefined, tree)
+      console.log(computation.result)
+      // console.log(computation)
+      driver(computation.result)
+    }
+  },
 ])
 
 const Counter = {
@@ -115,6 +173,12 @@ const Counter = {
         h('span.count', {}, state.count),
         h('button.inc', {onClick: dispatch('inc')}, '+'),
       ])
+    },
+    hotkeys: ({dispatch, state, props}) => {
+      return {
+        '=': dispatch('inc'),
+        '-': dispatch('dec'),
+      }
     },
   },
 }
@@ -175,6 +239,7 @@ const mapDispatch = partial(_mapDispatch)
 
 const lift = (key, app) => {
   return {
+    children: app.children,
     state: {
       _init: {
         [key]: computeInit(app),
@@ -189,27 +254,29 @@ const lift = (key, app) => {
         return state
       },
     },
-    effects: Object.keys(app.effects || {}).map(name => {
+    effects: Object.keys(app.effects || {}).concat(
+      // get children's side-effects as well to accumulate so mapDispatch works for them as well
+      (app.children || []).map(child => Object.keys(child.effects || {})).reduce(R.concat, [])
+    ).map(name => {
       if (name[0] === '_') {
         return {
-          [name]: ({dispatch, state, props}) => {
-            return app.effects[name]({
+          [name]: ({state, dispatch, props}) => {
+            return computeEffect(name.slice(1), app)({
               dispatch: mapDispatch(key, dispatch),
               state: state[key],
               props,
             })
-          },
+          }
         }
       }
-      // TODO this should return a lazy tree!
       return {
-        [name]: ({dispatch, state, props}) => {
-          return app.effects[name]({
+        [`_${name}`]: ({state, dispatch, props}) => {
+          return computeEffect(name, app)({
             dispatch: mapDispatch(key, dispatch),
             state: state[key],
             props,
           })
-        },
+        }
       }
     }).reduce(R.merge)
   }

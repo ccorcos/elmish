@@ -11,7 +11,9 @@ const Lazy = React.createClass({
       (nextProps.view === this.props.view) &&
       (nextProps.state === this.props.state) &&
       (shallow(nextProps.props, this.props.props)) &&
-      (nextProps.dispatch.equals(this.props.dispatch))
+      (nextProps.dispatch.__type === 'thunk' ?
+      nextProps.dispatch.equals(this.props.dispatch) :
+      nextProps.dispatch === this.props.dispatch)
     )
   },
   render() {
