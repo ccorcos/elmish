@@ -56,8 +56,7 @@ export const computeEffect = (name, app) => {
 
 const partial = thunk(deepEquals)
 
-const coerseToArray = type =>
-  isArray(type) ? type : [type]
+const coerseToArray = type => isArray(type) ? type : [type]
 
 const configure = drivers => app => {
   const action$ = flyd.stream()
@@ -87,7 +86,7 @@ const configure = drivers => app => {
 }
 
 const namespaceDispatch = partial((key, dispatch, type, payload) => {
-  return dispatch([key, isArray(type) ? type : [type]], payload)
+  return dispatch([key, coerseToArray(type)], payload)
 })
 
 const getEffectNames = app => {

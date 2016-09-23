@@ -131,9 +131,9 @@ const getModifiers = e => {
   return mods
 }
 
-const combineFunctions = (a, b) => () => {
-  a()
-  b()
+const combineFunctions = (a, b) => (...args) => {
+  a(...args)
+  b(...args)
 }
 
 const driver = (app, dispatch) => {

@@ -1,36 +1,32 @@
-// cleanup code
-// solidify the pattern.
-// - overridden effects should return a lazy tree
-// - normal effects are the value in the lazy tree
-// - if you only use overrides, you can build your own structure like with react
-//   but you dont get the help of putting it all together for you under the hood
-// - namespace will localize state, and mapDispatch for all the effects, init, update
-//   etc. but you need to make sure to crawl the children keys to see all the
-//   side-effects. children also MUST BE LIFTED. otherwise some quirks can happen
-//   with namespace collisions and missing children effects when namespaceing.
 
 // some potential issues
 // - the effect thunk doesnt entirely work because a namespaceed child only cares
 //   about its part of the state. so we'll need to figure that out later
 
 // things to do next
-// - clean up the hot keys driver
+// - batch dispatch
+//   - dispatch functions keep track of their arguments and we can leverage that
+//     to return a function that dispatches multiple actions.
 // - add batch update functionality with some way of merging dispatches.
-// - build some other side effect drivers like http and giphy example
 // - dynamic children example with listOf
 // - lazy performance
 // - pubsub
+
+// - any way for react driver to be translated from the node tree?
+// - how can we get lazy performance from namespacing?
 
 import R from 'ramda'
 import node, { thunk, reduce } from 'lazy-tree'
 import ReactDriver, { h } from 'elmish/v16/drivers/react'
 import HotkeysDriver from 'elmish/v16/drivers/hotkeys'
+import HTTPDriver from 'elmish/v16/drivers/http'
 import { shallow } from 'elmish/v16/utils/compare'
 import configure, { namespace } from 'elmish/v16/elmish'
 
 const start = configure([
   ReactDriver(document.getElementById('root')),
   HotkeysDriver,
+  HTTPDriver,
 ])
 
 const Counter = {
@@ -127,4 +123,75 @@ const twoOf = app => {
   }
 }
 
-start(twoOf(App2))
+// start(twoOf(App2))
+
+const randomUrl = (topic) =>
+  `http://api.giphy.com/v1/gifs/random?api_key=dc6zaTOxFJmzC&&rating=pg&tag=${topic}`
+
+const imgSrc = response => response.json.data.image_url
+
+const Giphy = {
+  state: {
+    init: {
+      topic: 'explosions',
+      img: undefined,
+      pending: true,
+      error: false,
+      id: 0,
+    },
+    update: (state, {type, payload}) => {
+      switch(type[0]) {
+        case 'newGif':
+          return {
+            ...state,
+            img: payload,
+            pending: false,
+            error: false,
+          }
+        case 'errorGif':
+          return {
+            ...state,
+            img: undefined,
+            pending: false,
+            error: true,
+          }
+        case 'anotherGif':
+          return {
+            ...state,
+            img: undefined,
+            pending: true,
+            id: state.id + 1,
+          }
+        default:
+          return state
+      }
+    }
+  },
+  effects: {
+    _view: ({dispatch, state}) => {
+      return h('div.giphy', {}, [
+        h('h2.topic', {}, state.topic),
+        state.error ? 'ERROR' : state.pending ? 'LOADING' : h('img', {src: state.img}),
+        h('button', {
+          onClick: dispatch('anotherGif'),
+        }, 'Gimme More!')
+      ])
+    },
+    http: ({dispatch, state}) => {
+      if (state.pending) {
+        return {
+          [state.id]: {
+            url: randomUrl(state.topic),
+            method: 'get',
+            onSuccess: dispatch('newGif', imgSrc),
+            onFailure: dispatch('errorGif'),
+          },
+        }
+      }
+      return {}
+    },
+  },
+}
+
+// start(Giphy)
+start(twoOf(Giphy))
