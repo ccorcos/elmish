@@ -4,10 +4,16 @@
 //   about its part of the state. so we'll need to figure that out later
 
 // things to do next
+// - how could we redefine all of this to use flowtype?
+//   - lets first pull lazy tree into this library
+//   - lets redefine lazy tree thunk to just be a lazy node with nothing fancy
+//   - lets use phantom types to define a dispatch thunk
+//   - use generic graph structure for react and translate in the react driver
+//   - now batch dispatch should be a lot easier
 // - batch dispatch
 //   - dispatch functions keep track of their arguments and we can leverage that
 //     to return a function that dispatches multiple actions.
-// - add batch update functionality with some way of merging dispatches.
+//   - batch properly in http and hotkeys when reducing
 // - dynamic children example with listOf
 // - lazy performance
 // - pubsub
