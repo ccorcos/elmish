@@ -1,5 +1,6 @@
+import flyd from 'flyd'
 import node, { thunk } from 'lazy-tree'
-import { shallow } from 'elmish/v16/utils/compare'
+import { shallowEquals, deepEquals } from 'elmish/v16/utils/compare'
 import { isArray, isFunction } from 'elmish/v16/utils/is'
 
 // merge all children states with the init state
@@ -26,14 +27,14 @@ export const computeUpdate = app => {
   }
 }
 
-const effectThunk = thunk((args1, args2) => {
-  return args1[0] === args2[0] // name
-      && args1[1] === args2[1] // child
-      && args1[2].state === args2[2].state
-      && (args1[2].dispatch.__type === 'thunk'
-      ? args1[2].dispatch.equals(args2[2].dispatch)
-      : args1[2].dispatch === args2[2].dispatch)
-      && shallow(args1[2].props, args2[2].props)
+// TODO lazy tree can simply be a lazynode rather than an actual node. doesnt need
+// all this fancy PAFE stuff
+const effectThunk = thunk(([fn1, name1, child1, props1], [fn2, name2, child2, props2]) => {
+  return fn1 === fn2
+      && name1 === name2
+      && child1 === child2
+      && deepEquals(props1.dispatch, props2.dispatch)
+      && shallowEquals(props1.props, props2.props)
 })
 
 const computeEffectHelper = (f,a,b,c) => f(a,b)(c)
@@ -53,11 +54,9 @@ export const computeEffect = (name, app) => {
   }
 }
 
-const partial = thunk(([type1, payload1], [type2, payload2]) => {
-  return type1 === type2 && payload1 === payload2
-})
+const partial = thunk(deepEquals)
 
-const wrapActionType = type =>
+const coerseToArray = type =>
   isArray(type) ? type : [type]
 
 const configure = drivers => app => {
@@ -74,10 +73,10 @@ const configure = drivers => app => {
 
   const dispatch = partial((type, payload, ...args) => {
     if (isFunction(payload)) {
-      return action$({type: wrapActionType(type), payload: payload(...args)})
+      return action$({type: coerseToArray(type), payload: payload(...args)})
     }
-    return action$({type: wrapActionType(type), payload})
-  }
+    return action$({type: coerseToArray(type), payload})
+  })
 
   // initialize drivers so they can set up their states
   const initializedDrivers = drivers.map(driver => driver(app, dispatch))
@@ -85,6 +84,53 @@ const configure = drivers => app => {
   flyd.on(state => {
     initializedDrivers.forEach(driver => driver(state))
   }, state$)
+}
+
+const namespaceDispatch = partial((key, dispatch, type, payload) => {
+  return dispatch([key, isArray(type) ? type : [type]], payload)
+})
+
+const getEffectNames = app => {
+  return Object.keys(app.effects || {})
+    .concat(
+      (app.children || [])
+        .map(child => Object.keys(child.effects || {}))
+        .reduce((acc, ch) => acc.concat(ch), [])
+    )
+    .map(name => name[0] === '_' ? name.slice(1) : name)
+}
+
+export const namespace = (key, app) => {
+  return {
+    children: app.children,
+    state: {
+      _init: {
+        [key]: computeInit(app),
+      },
+      _update: (state, {type, payload}) => {
+        if (type[0] === key) {
+          return {
+            ...state,
+            [key]: computeUpdate(app)(state[key], {type: type[1], payload})
+          }
+        }
+        return state
+      },
+    },
+    effects: getEffectNames(app).map(name => {
+      return {
+        [`_${name}`]: ({state, dispatch, props}) => {
+          return computeEffect(name, app)({
+            dispatch: namespaceDispatch(key, dispatch),
+            state: state[key],
+            props,
+          })
+        }
+      }
+    }).reduce((a, b) => {
+      return {...a, ...b}
+    })
+  }
 }
 
 export default configure

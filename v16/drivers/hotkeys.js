@@ -1,6 +1,8 @@
 import flyd from 'flyd'
 import filter from 'flyd/module/filter'
 import R from 'ramda'
+import { computeEffect } from 'elmish/v16/elmish'
+import { reduce } from 'lazy-tree'
 
 const keymap = {
   8: 'backspace',
@@ -129,10 +131,16 @@ const getModifiers = e => {
   return mods
 }
 
+const combineFunctions = (a, b) => () => {
+  a()
+  b()
+}
+
 const driver = (app, dispatch) => {
 
   let keys = []
   let listeners = {}
+  let computation = undefined
 
   document.addEventListener('keydown', (e) => {
     if (shouldCaptureHotkey(e)) {
@@ -140,7 +148,7 @@ const driver = (app, dispatch) => {
       keys = addKey(key, keys)
 
       const hotkey = formatKeys(keys.concat(getModifiers(e)))
-      console.log(hotkey)
+      // console.log(hotkey)
       const callback = listeners[hotkey]
       if (callback) {
         e.preventDefault()
@@ -160,9 +168,15 @@ const driver = (app, dispatch) => {
     }
   })
 
-  return (def) => {
-    listeners = formatHotkeyDef(def)
-    console.log('listeners', listeners)
+  return state => {
+    const computeHotkeys = computeEffect('hotkeys', app)
+    const tree = computeHotkeys({state, dispatch})
+
+    computation = reduce((a,b) => {
+      return R.mergeWith(combineFunctions, a, b)
+    }, computation, tree)
+
+    listeners = formatHotkeyDef(computation.result)
   }
 }
 

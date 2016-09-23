@@ -1,20 +1,16 @@
 import flyd from 'flyd'
 import React from 'react'
 import ReactDOM from 'react-dom'
-import { shallow } from 'elmish/v16/utils/compare'
+import { shallowEquals } from 'elmish/v16/utils/compare'
 import { isPlainObject, isString } from 'elmish/v16/utils/is'
 
 // wrap the component view function in a lazy component
 const Lazy = React.createClass({
   shouldComponentUpdate(nextProps) {
-    return !(
-      (nextProps.view === this.props.view) &&
-      (nextProps.state === this.props.state) &&
-      (shallow(nextProps.props, this.props.props)) &&
-      (nextProps.dispatch.__type === 'thunk' ?
-      nextProps.dispatch.equals(this.props.dispatch) :
-      nextProps.dispatch === this.props.dispatch)
-    )
+    return nextProps.view !== this.props.view
+        || nextProps.state !== this.props.state
+        || !nextProps.dispatch.equals(this.props.dispatch)
+        || !shallowEquals(nextProps.props, this.props.props)
   },
   render() {
     return this.props.view(this.props)

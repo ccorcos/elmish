@@ -1,6 +1,9 @@
 import { isFunction } from 'elmish/v13+/utils/is'
+import equals from 'ramda/src/equals'
 
-export const shallow = (obj1, obj2) => {
+export const deepEquals = equals
+
+export const shallowEquals = (obj1, obj2) => {
   if (obj1 === obj2) {
     return true
   }
