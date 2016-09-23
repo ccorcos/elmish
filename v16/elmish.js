@@ -1,5 +1,5 @@
 import flyd from 'flyd'
-import node, { thunk } from 'lazy-tree'
+import { node, lazyNode } from 'elmish/v16/lazy-tree'
 import { shallowEquals, deepEquals } from 'elmish/v16/utils/compare'
 import { isArray, isFunction } from 'elmish/v16/utils/is'
 
@@ -27,19 +27,9 @@ export const computeUpdate = app => {
   }
 }
 
-// TODO lazy tree can simply be a lazynode rather than an actual node. doesnt need
-// all this fancy PAFE stuff
-const effectThunk = thunk(([fn1, name1, child1, props1], [fn2, name2, child2, props2]) => {
-  return fn1 === fn2
-      && name1 === name2
-      && child1 === child2
-      && deepEquals(props1.dispatch, props2.dispatch)
-      && shallowEquals(props1.props, props2.props)
-})
+const _computeEffect = (fn, a, b, c) => fn(a,b)(c)
 
-const computeEffectHelper = (f,a,b,c) => f(a,b)(c)
-
-// compute the node value, and create thunks for all children, creating a lazy tree
+// compute the node value, and create lazyNodes for all children, creating a lazy tree
 export const computeEffect = (name, app) => {
   if (app.effects && app.effects[`_${name}`]) {
     return app.effects[`_${name}`]
@@ -48,13 +38,35 @@ export const computeEffect = (name, app) => {
     return node(
       (app.effects && app.effects[name]) ? app.effects[name]({dispatch, state, props}) : {},
       (app.children || []).map(child => {
-        return effectThunk(computeEffectHelper)(computeEffect, name, child, {dispatch, state, props})
+        return lazyNode(
+          _computeEffect,
+          [computeEffect, name, child, {dispatch, state, props}]
+        )
       })
     )
   }
 }
 
-const partial = thunk(deepEquals)
+// partially apply a function that returns a function that can be compared
+// based on the original funciton and the partially applied arguments so that
+// we can compare dispatch functions and lazily evaluate the lazy tree.
+const partial = fn => (...args) => {
+  const _fn = (...more) => fn.apply(null, args.concat(more))
+  _fn.__type = 'thunk'
+  if (fn.__type === 'thunk') {
+    _fn.fn = fn.fn
+    _fn.args = fn.args.concat(args)
+  } else {
+    _fn.fn = fn
+    _fn.args = args
+  }
+  _fn.equals = g => g
+                   && g.__type === 'thunk'
+                   && _fn.fn === g.fn
+                   && g.args
+                   && deepEquals(_fn.args, g.args)
+  return _fn
+}
 
 const coerseToArray = type => isArray(type) ? type : [type]
 

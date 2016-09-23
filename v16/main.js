@@ -4,12 +4,10 @@
 //   about its part of the state. so we'll need to figure that out later
 
 // things to do next
+// - use generic graph structure for react and translate in the react driver
+// - now batch dispatch should be a lot easier
 // - how could we redefine all of this to use flowtype?
-//   - lets first pull lazy tree into this library
-//   - lets redefine lazy tree thunk to just be a lazy node with nothing fancy
 //   - lets use phantom types to define a dispatch thunk
-//   - use generic graph structure for react and translate in the react driver
-//   - now batch dispatch should be a lot easier
 // - batch dispatch
 //   - dispatch functions keep track of their arguments and we can leverage that
 //     to return a function that dispatches multiple actions.
@@ -22,7 +20,6 @@
 // - how can we get lazy performance from namespacing?
 
 import R from 'ramda'
-import node, { thunk, reduce } from 'lazy-tree'
 import ReactDriver, { h } from 'elmish/v16/drivers/react'
 import HotkeysDriver from 'elmish/v16/drivers/hotkeys'
 import HTTPDriver from 'elmish/v16/drivers/http'

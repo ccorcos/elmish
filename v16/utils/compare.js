@@ -30,3 +30,14 @@ export const shallowEquals = (obj1, obj2) => {
   }
   return true
 }
+
+const effectArgsEquals = ([name1, child1, props1], [name2, child2, props2]) => {
+  return name1 === name2
+      && child1 === child2
+      && deepEquals(props1.dispatch, props2.dispatch)
+      && shallowEquals(props1.props, props2.props)
+}
+
+export const effectEquals = (node1, node2) => {
+  return node1.fn === node2.fn && effectArgsEquals(node1.args, node2.args)
+}

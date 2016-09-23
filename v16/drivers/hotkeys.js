@@ -2,7 +2,8 @@ import flyd from 'flyd'
 import filter from 'flyd/module/filter'
 import R from 'ramda'
 import { computeEffect } from 'elmish/v16/elmish'
-import { reduce } from 'lazy-tree'
+import { reduceLazyTree } from 'elmish/v16/lazy-tree'
+import { effectEquals } from 'elmish/v16/utils/compare'
 
 const keymap = {
   8: 'backspace',
@@ -172,7 +173,7 @@ const driver = (app, dispatch) => {
     const computeHotkeys = computeEffect('hotkeys', app)
     const tree = computeHotkeys({state, dispatch})
 
-    computation = reduce((a,b) => {
+    computation = reduceLazyTree(effectEquals, (a,b) => {
       return R.mergeWith(combineFunctions, a, b)
     }, computation, tree)
 
