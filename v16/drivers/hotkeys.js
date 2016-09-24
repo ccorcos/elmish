@@ -149,7 +149,7 @@ const driver = (app, dispatch, batch) => {
       if (callback) {
         e.preventDefault()
         e.stopPropagation()
-        callback()
+        batch(callback)
         // keyup only fires *after* the default action has been performed
         // http://www.quirksmode.org/dom/events/keys.html
         keys = removeKey(key, keys)
@@ -164,12 +164,17 @@ const driver = (app, dispatch, batch) => {
     }
   })
 
+  const mergeDispatch = (a, b) => (...args) => {
+    a(...args)
+    b(...args)
+  }
+
   return state => {
     const computeHotkeys = computeEffect('hotkeys', app)
     const tree = computeHotkeys({state, dispatch})
 
     computation = reduceLazyTree(effectEquals, (a,b) => {
-      return R.mergeWith(batch, a, b)
+      return R.mergeWith(mergeDispatch, a, b)
     }, computation, tree)
 
     listeners = formatHotkeyDef(computation.result)

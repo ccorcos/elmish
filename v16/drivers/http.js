@@ -15,23 +15,32 @@ const driver = (app, dispatch, batch) => {
         response.json = json
         const handler = inFlight[key]
         if (handler) {
-          handler.onSuccess(response)
+          batch(() => {
+            handler.onSuccess(response)
+          })
         }
       })
     })
     .catch(error => {
       const handler = inFlight[key]
       if (handler) {
-        handler.onFailure(error)
+        batch(() => {
+          handler.onFailure(error)
+        })
       }
     })
+  }
+
+  const mergeDispatch = (a, b) => (...args) => {
+    a(...args)
+    b(...args)
   }
 
   const combineHttpEffects = (a, b) => {
     return {
       ...a,
-      onSuccess: batch(a.onSuccess, b.onSuccess),
-      onFailure: batch(a.onFailure, b.onFailure),
+      onSuccess: mergeDispatch(a.onSuccess, b.onSuccess),
+      onFailure: mergeDispatch(a.onFailure, b.onFailure),
     }
   }
 

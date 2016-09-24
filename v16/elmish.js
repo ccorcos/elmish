@@ -93,10 +93,9 @@ const configure = drivers => app => {
   const throttle$ = flyd.stream(false)
   const throttledState$ = throttleWhen(throttle$, state$)
 
-  const batch = (a, b) => (...args) => {
+  const batch = (fn) => {
     throttle$(true)
-    a(...args)
-    b(...args)
+    fn()
     throttle$(false)
   }
 
