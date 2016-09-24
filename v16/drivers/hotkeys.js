@@ -132,12 +132,7 @@ const getModifiers = e => {
   return mods
 }
 
-const combineFunctions = (a, b) => (...args) => {
-  a(...args)
-  b(...args)
-}
-
-const driver = (app, dispatch) => {
+const driver = (app, dispatch, batch) => {
 
   let keys = []
   let listeners = {}
@@ -174,7 +169,7 @@ const driver = (app, dispatch) => {
     const tree = computeHotkeys({state, dispatch})
 
     computation = reduceLazyTree(effectEquals, (a,b) => {
-      return R.mergeWith(combineFunctions, a, b)
+      return R.mergeWith(batch, a, b)
     }, computation, tree)
 
     listeners = formatHotkeyDef(computation.result)

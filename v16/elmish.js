@@ -2,6 +2,7 @@ import flyd from 'flyd'
 import { node, lazyNode } from 'elmish/v16/lazy-tree'
 import { shallowEquals, deepEquals } from 'elmish/v16/utils/compare'
 import { isArray, isFunction } from 'elmish/v16/utils/is'
+import throttleWhen from 'elmish/src/utils/throttleWhen'
 
 // merge all children states with the init state
 export const computeInit = app => {
@@ -89,12 +90,22 @@ const configure = drivers => app => {
     return action$({type: coerseToArray(type), payload})
   })
 
+  const throttle$ = flyd.stream(false)
+  const throttledState$ = throttleWhen(throttle$, state$)
+
+  const batch = (a, b) => (...args) => {
+    throttle$(true)
+    a(...args)
+    b(...args)
+    throttle$(false)
+  }
+
   // initialize drivers so they can set up their states
-  const initializedDrivers = drivers.map(driver => driver(app, dispatch))
+  const initializedDrivers = drivers.map(driver => driver(app, dispatch, batch))
 
   flyd.on(state => {
     initializedDrivers.forEach(driver => driver(state))
-  }, state$)
+  }, throttledState$)
 }
 
 const namespaceDispatch = partial((key, dispatch, type, payload) => {

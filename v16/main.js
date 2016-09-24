@@ -4,14 +4,8 @@
 //   about its part of the state. so we'll need to figure that out later
 
 // things to do next
-// - use generic graph structure for react and translate in the react driver
-// - now batch dispatch should be a lot easier
-// - how could we redefine all of this to use flowtype?
-//   - lets use phantom types to define a dispatch thunk
 // - batch dispatch
-//   - dispatch functions keep track of their arguments and we can leverage that
-//     to return a function that dispatches multiple actions.
-//   - batch properly in http and hotkeys when reducing
+// - undoable component with update override
 // - dynamic children example with listOf
 // - lazy performance
 // - pubsub
@@ -117,6 +111,7 @@ const twoOf = app => {
     children: [app1, app2],
     effects: {
       _view: ({dispatch, state}) => {
+        console.log('render')
         return h('div.two-of', {}, [
           h(app1, {dispatch, state}),
           h(app2, {dispatch, state}),
@@ -126,7 +121,7 @@ const twoOf = app => {
   }
 }
 
-// start(twoOf(App2))
+start(twoOf(App2))
 
 const randomUrl = (topic) =>
   `http://api.giphy.com/v1/gifs/random?api_key=dc6zaTOxFJmzC&&rating=pg&tag=${topic}`
@@ -197,4 +192,4 @@ const Giphy = {
 }
 
 // start(Giphy)
-start(twoOf(Giphy))
+// start(twoOf(Giphy))

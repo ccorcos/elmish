@@ -3,20 +3,7 @@ import { reduceLazyTree } from 'elmish/v16/lazy-tree'
 import { effectEquals } from 'elmish/v16/utils/compare'
 import R from 'ramda'
 
-const combineFunctions = (a, b) => (...args) => {
-  a(...args)
-  b(...args)
-}
-
-const combineHttpEffects = (a, b) => {
-  return {
-    ...a,
-    onSuccess: combineFunctions(a.onSuccess, b.onSuccess),
-    onFailure: combineFunctions(a.onFailure, b.onFailure),
-  }
-}
-
-const driver = (app, dispatch) => {
+const driver = (app, dispatch, batch) => {
 
   let computation = undefined
   let inFlight = {}
@@ -38,6 +25,14 @@ const driver = (app, dispatch) => {
         handler.onFailure(error)
       }
     })
+  }
+
+  const combineHttpEffects = (a, b) => {
+    return {
+      ...a,
+      onSuccess: batch(a.onSuccess, b.onSuccess),
+      onFailure: batch(a.onFailure, b.onFailure),
+    }
   }
 
   return state => {
