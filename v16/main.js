@@ -4,7 +4,6 @@
 //   about its part of the state. so we'll need to figure that out later
 
 // things to do next
-// - undoable component with update override
 // - dynamic children example with listOf
 // - lazy performance
 // - pubsub
@@ -246,6 +245,14 @@ const undoable = (app) => {
             props
           })
         ])
+      },
+      hotkeys: ({dispatch, state, props}) => {
+        const canUndo = state.time > 0
+        const canRedo = state.time < state.states.length - 1
+        return {
+          'cmd z': canUndo ? dispatch('undo') : () => {},
+          'cmd shift z': canRedo ? dispatch('redo') : () => {},
+        }
       }
     }
   }
