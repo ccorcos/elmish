@@ -4,7 +4,6 @@
 //   about its part of the state. so we'll need to figure that out later
 
 // things to do next
-// - batch dispatch
 // - undoable component with update override
 // - dynamic children example with listOf
 // - lazy performance
@@ -18,7 +17,7 @@ import ReactDriver, { h } from 'elmish/v16/drivers/react'
 import HotkeysDriver from 'elmish/v16/drivers/hotkeys'
 import HTTPDriver from 'elmish/v16/drivers/http'
 import { shallow } from 'elmish/v16/utils/compare'
-import configure, { namespace } from 'elmish/v16/elmish'
+import configure, { namespace, computeInit, computeUpdate, computeEffect, namespaceDispatch } from 'elmish/v16/elmish'
 
 const start = configure([
   ReactDriver(document.getElementById('root')),
@@ -111,7 +110,6 @@ const twoOf = app => {
     children: [app1, app2],
     effects: {
       _view: ({dispatch, state}) => {
-        console.log('render')
         return h('div.two-of', {}, [
           h(app1, {dispatch, state}),
           h(app2, {dispatch, state}),
@@ -121,7 +119,8 @@ const twoOf = app => {
   }
 }
 
-start(twoOf(App2))
+// start(twoOf(App2))
+// start(twoOf(twoOf(App2)))
 
 const randomUrl = (topic) =>
   `http://api.giphy.com/v1/gifs/random?api_key=dc6zaTOxFJmzC&&rating=pg&tag=${topic}`
@@ -193,3 +192,63 @@ const Giphy = {
 
 // start(Giphy)
 // start(twoOf(Giphy))
+
+const undoable = (app) => {
+  return {
+    state: {
+      _init: {
+        time: 0,
+        states: [computeInit(app)]
+      },
+      _update: (state, {type, payload}) => {
+        if (type[0] === 'app') {
+          const present = state.states[state.time]
+          const next = computeUpdate(app)(present, {
+            type: type[1],
+            payload,
+          })
+          return {
+            time: state.time + 1,
+            states: state.states.slice(0, state.time + 1).concat([next])
+          }
+        }
+        if (type[0] === 'undo') {
+          return {
+            ...state,
+            time: state.time - 1,
+          }
+        }
+        if (type[0] === 'redo') {
+          return {
+            ...state,
+            time: state.time + 1,
+          }
+        }
+        return state
+      },
+    },
+    effects: {
+      _view: ({dispatch, state, props}) => {
+        const canUndo = state.time > 0
+        const canRedo = state.time < state.states.length - 1
+        return h('div.undoable', {}, [
+          h('button.undo', {
+            disabled: !canUndo,
+            onClick: canUndo ? dispatch('undo') : undefined
+          }, 'undo'),
+          h('button.redo', {
+            disabled: !canRedo,
+            onClick: canRedo ? dispatch('redo') : undefined
+          }, 'redo'),
+          computeEffect('view', app)({
+            dispatch: namespaceDispatch('app', dispatch),
+            state: state.states[state.time],
+            props
+          })
+        ])
+      }
+    }
+  }
+}
+
+start(undoable(App2))

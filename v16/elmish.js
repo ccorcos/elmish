@@ -107,7 +107,7 @@ const configure = drivers => app => {
   }, throttledState$)
 }
 
-const namespaceDispatch = partial((key, dispatch, type, payload) => {
+export const namespaceDispatch = partial((key, dispatch, type, payload) => {
   return dispatch([key, coerseToArray(type)], payload)
 })
 
