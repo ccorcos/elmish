@@ -4,12 +4,38 @@ import { shallowEquals, deepEquals } from 'elmish/v16/utils/compare'
 import { isArray, isFunction } from 'elmish/v16/utils/is'
 import throttleWhen from 'elmish/src/utils/throttleWhen'
 
+const assert = (truthy, message) => {
+  if (!truthy) {
+    throw new Error(message)
+  }
+}
+
+const getStaticChildren = app => {
+  return app.children || []
+}
+
+const getDynamicChildren = (app, state) => {
+  assert(
+    app._init,
+    'If a component has dynamic children, then you must specify the ' +
+    'inital state of the component using `_init`'
+  )
+  return app.children(state)
+}
+
+const getChildren = (app, state) => {
+  if (isFunction(app.children)) {
+    return getDynamicChildren(app, state)
+  }
+  return getStaticChildren(app)
+}
+
 // merge all children states with the init state
 export const computeInit = app => {
   if (app.state && app.state._init) {
     return app.state._init
   }
-  return (app.children || []).reduce(
+  return getStaticChildren(app).reduce(
     (st, child) => ({...st, ...computeInit(child)}),
     app.state && app.state.init || {},
   )
@@ -21,7 +47,7 @@ export const computeUpdate = app => {
     return app.state._update
   }
   return (state, action) => {
-    return (app.children || []).reduce(
+    return getChildren(app, state).reduce(
       (st, child) => computeUpdate(child)(st, action),
       (app.state && app.state.update) ? app.state.update(state, action) : state,
     )
@@ -38,7 +64,7 @@ export const computeEffect = (name, app) => {
   return ({dispatch, state, props}) => {
     return node(
       (app.effects && app.effects[name]) ? app.effects[name]({dispatch, state, props}) : {},
-      (app.children || []).map(child => {
+      getChildren(app, state).map(child => {
         return lazyNode(
           _computeEffect,
           [computeEffect, name, child, {dispatch, state, props}]
@@ -121,19 +147,19 @@ const getEffectNames = app => {
     .map(name => name[0] === '_' ? name.slice(1) : name)
 }
 
-export const namespace = (key, app) => {
+// setState is really just namespacing so it can be merged.
+// actionType is also just a namespace
+export const namespaceWith = ({getState, setState, actionType}) => app => {
   return {
     children: app.children,
     state: {
-      _init: {
-        [key]: computeInit(app),
-      },
+      _init: setState(computeInit(app), {}),
       _update: (state, {type, payload}) => {
-        if (type[0] === key) {
-          return {
-            ...state,
-            [key]: computeUpdate(app)(state[key], {type: type[1], payload})
-          }
+        if (type[0] === actionType) {
+          return setState(
+            computeUpdate(app)(getState(state), {type: type[1], payload}),
+            state
+          )
         }
         return state
       },
@@ -141,9 +167,9 @@ export const namespace = (key, app) => {
     effects: getEffectNames(app).map(name => {
       return {
         [`_${name}`]: ({state, dispatch, props}) => {
-          return computeEffect(name, app)({
-            dispatch: namespaceDispatch(key, dispatch),
-            state: state[key],
+            return computeEffect(name, app)({
+            dispatch: namespaceDispatch(actionType, dispatch),
+            state: getState(state),
             props,
           })
         }
@@ -153,5 +179,19 @@ export const namespace = (key, app) => {
     })
   }
 }
+
+export const namespace = (key, app) => {
+  return namespaceWith({
+    actionType: key,
+    getState: state => state[key],
+    setState: (substate, state) => {
+      return {
+        ...state,
+        [key]: substate,
+      }
+    },
+  })(app)
+}
+
 
 export default configure

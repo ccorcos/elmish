@@ -19,7 +19,7 @@ import ReactDriver, { h } from 'elmish/v16/drivers/react'
 import HotkeysDriver from 'elmish/v16/drivers/hotkeys'
 import HTTPDriver from 'elmish/v16/drivers/http'
 import { shallow } from 'elmish/v16/utils/compare'
-import configure, { namespace, computeInit, computeUpdate, computeEffect, namespaceDispatch } from 'elmish/v16/elmish'
+import configure, { namespace, namespaceWith, computeInit, computeUpdate, computeEffect, namespaceDispatch } from 'elmish/v16/elmish'
 
 const start = configure([
   ReactDriver(document.getElementById('root')),
@@ -195,8 +195,17 @@ const Giphy = {
 // start(Giphy)
 // start(twoOf(Giphy))
 
+const namespaceUndoable = namespaceWith({
+  actionType: 'app',
+  getState: state => state.states[state.time],
+  // we're overriding _init and _update anyways so this doesnt matter
+  setState: (substate, state) => substate
+})
+
 const undoable = (app) => {
+  const undoableApp = namespaceUndoable(app)
   return {
+    children: [undoableApp],
     state: {
       _init: {
         time: 0,
@@ -242,9 +251,9 @@ const undoable = (app) => {
             disabled: !canRedo,
             onClick: canRedo ? dispatch('redo') : undefined
           }, 'redo'),
-          computeEffect('view', app)({
-            dispatch: namespaceDispatch('app', dispatch),
-            state: state.states[state.time],
+          computeEffect('view', undoableApp)({
+            dispatch,
+            state,
             props
           })
         ])
@@ -261,4 +270,5 @@ const undoable = (app) => {
   }
 }
 
-start(undoable(App2))
+// start(undoable(App2))
+start(undoable(twoOf(App2)))
