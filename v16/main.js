@@ -4,13 +4,6 @@
 //   about its part of the state. so we'll need to figure that out later
 
 // things to do next
-// - we should always be using computeEffect so we dont actually need to deal
-//   with effects in the nest function. we just need to keep track of all the
-//   nested properties. so lets keep track of all that separately.
-// - lets make sure we're calling a component and its children with the proper
-//   state and mapped dispatch.
-// - computeEffect should handle crawling the entire tree rather than namespacing
-//   because nest will need the state to get the children...
 // - refactor + polish
 //   - better names
 //   - more comments and documentation
