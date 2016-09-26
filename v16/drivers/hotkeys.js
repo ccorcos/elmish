@@ -170,9 +170,6 @@ const driver = (app, dispatch, batch) => {
   }
 
   return tree => {
-    // const computeHotkeys = computeEffect('hotkeys', app)
-    // const tree = computeHotkeys({state, dispatch})
-
     computation = reduceLazyTree(effectEquals, (a,b) => {
       return R.mergeWith(mergeDispatch, a, b)
     }, computation, tree)

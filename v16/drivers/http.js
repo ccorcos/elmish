@@ -45,9 +45,6 @@ const driver = (app, dispatch, batch) => {
   }
 
   return tree => {
-    // const computeHttp = computeEffect('http', app)
-    // const tree = computeHttp({state, dispatch})
-
     computation = reduceLazyTree(effectEquals, (a,b) => {
       return R.mergeWith(combineHttpEffects, a, b)
     }, undefined, tree)

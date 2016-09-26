@@ -35,6 +35,7 @@ const effectArgsEquals = ([_fn1, name1, child1, props1], [_fn2, name2, child2, p
   return _fn1 === _fn2
       && name1 === name2
       && child1 === child2
+      && props1.state === props2.state
       && deepEquals(props1.dispatch, props2.dispatch)
       && shallowEquals(props1.props, props2.props)
 }

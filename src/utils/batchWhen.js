@@ -53,7 +53,6 @@ const batchWhen = flyd.curryN(2, (sBool, sA) => {
         self([sA()])
       }
     }
-
   }, [dropRepeats(sBool), sA])
 
   return ns

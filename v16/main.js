@@ -4,6 +4,13 @@
 //   about its part of the state. so we'll need to figure that out later
 
 // things to do next
+// - create some lazy performance tools to visualize what part of the tree changes
+// - figure out a way to compute the effects tree only once and share it amongst
+//   the drivers so we dont compute getChildren more than we need to
+// - how can we reason about the lazy performance?
+// - pubsub
+//   - seems like we want a driver so that we can lazily compute this but i dont
+//     know how we'd pass it down...
 // - refactor + polish
 //   - better function names
 //   - more comments and documentation
@@ -12,11 +19,6 @@
 //   - better debugging tools
 //     - how do I know that laziness worked?
 //     - what was lazy and what wasnt?
-// - lazy performance
-// - pubsub
-
-// - any way for react driver to be translated from the node tree?
-// - how can we get lazy performance from namespacing?
 
 import R from 'ramda'
 import ReactDriver, { h } from 'elmish/v16/drivers/react'
@@ -55,6 +57,7 @@ const Counter = {
   },
   effects: {
     _react: ({dispatch, state, props}) => {
+      console.log('counter react')
       return h('div.counter', {}, [
         h('button.dec', {onClick: dispatch('dec')}, '-'),
         h('span.count', {}, state.count),
@@ -62,6 +65,7 @@ const Counter = {
       ])
     },
     hotkeys: ({dispatch, state, props}) => {
+      console.log('counter hotkeys')
       return {
         '=': dispatch('inc'),
         '-': dispatch('dec'),
@@ -240,7 +244,7 @@ const ThreeGiphy = {
   }
 }
 
-start(ThreeGiphy)
+// start(ThreeGiphy)
 
 const nestUndoable = nestWith({
   action: { type: 'app' },
@@ -391,7 +395,7 @@ const listOf = app => {
   }
 }
 
-// start(listOf(App2))
+start(listOf(App2))
 // start(listOf(listOf(App2)))
 
 const logger = createLogger()
@@ -415,4 +419,4 @@ const withLogger = app => {
   }
 }
 
-start(withLogger(listOf(App2)))
+// start(withLogger(listOf(App2)))
