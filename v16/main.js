@@ -4,10 +4,14 @@
 //   about its part of the state. so we'll need to figure that out later
 
 // things to do next
-// - undoable masked the children's hotkeys so we do need to specify
-//   the children dynamically. it would be great if we could specify the
-//   state getter and the dispatch namespace separately
-// - dynamic children example with listOf
+// - refactor + polish
+//   - better names
+//   - more comments and documentation
+//   - better debugging tools
+//     - how do I know that laziness worked?
+//     - what was lazy and what wasnt?
+//   - redux middleware shim
+//   - redux devtool shim
 // - lazy performance
 // - pubsub
 
