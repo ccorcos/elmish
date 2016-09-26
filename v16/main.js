@@ -4,7 +4,6 @@
 //   about its part of the state. so we'll need to figure that out later
 
 // things to do next
-// - nest listOf should let you map the entire action
 // - refactor + polish
 //   - better names
 //   - more comments and documentation
