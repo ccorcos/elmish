@@ -103,16 +103,12 @@ const partial = fn => (...args) => {
   return _fn
 }
 
-const coerseToArray = type => isArray(type) ? type : [type]
-
 const configure = drivers => component => {
   const action$ = flyd.stream()
 
   const state$ = flyd.scan(
     (state, action) => {
-      console.log("scan", state, action)
       const next = computeUpdate(component)(state, action)
-      console.log("state", next)
       return next
     },
     computeInit(component),
@@ -121,9 +117,9 @@ const configure = drivers => component => {
 
   const dispatch = partial((type, payload, ...args) => {
     if (isFunction(payload)) {
-      return action$({type: coerseToArray(type), payload: payload(...args)})
+      return action$({type, payload: payload(...args)})
     }
-    return action$({type: coerseToArray(type), payload})
+    return action$({type, payload})
   })
 
   const throttle$ = flyd.stream(false)
@@ -143,8 +139,18 @@ const configure = drivers => component => {
   }, throttledState$)
 }
 
+const mapPayload = partial((type, fn, ...args) => {
+  return {
+    type,
+    payload: fn(...args),
+  }
+})
+
 export const namespaceDispatch = partial((key, dispatch, type, payload) => {
-  return dispatch([key, coerseToArray(type)], payload)
+  if (isFunction(payload)) {
+    return dispatch(key, mapPayload(type, payload))
+  }
+  return dispatch(key, {type, payload})
 })
 
 const getEffectNames = component => {
@@ -165,9 +171,9 @@ export const namespaceWith = ({getState, setState, actionType}) => component => 
     state: {
       _init: setState(computeInit(component), {}),
       _update: (state, {type, payload}) => {
-        if (type[0] === actionType) {
+        if (type == actionType) {
           return setState(
-            computeUpdate(component)(getState(state), {type: type[1], payload}),
+            computeUpdate(component)(getState(state), payload),
             state
           )
         }

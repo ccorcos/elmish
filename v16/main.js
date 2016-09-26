@@ -37,10 +37,10 @@ const Counter = {
       count : 0,
     },
     update: (state, {type, payload}) => {
-      if (type[0] === 'inc') {
+      if (type === 'inc') {
         return { count: state.count + 1 }
       }
-      if (type[0] === 'dec') {
+      if (type === 'dec') {
         return { count: state.count - 1 }
       }
       return state
@@ -71,7 +71,7 @@ const Username = {
       username: '',
     },
     update: (state, {type, payload}) => {
-      if (type[0] === 'username/change') {
+      if (type === 'username/change') {
         return {
           username: payload,
         }
@@ -143,7 +143,7 @@ const Giphy = {
       id: 0,
     },
     update: (state, {type, payload}) => {
-      switch(type[0]) {
+      switch(type) {
         case 'newGif':
           return {
             ...state,
@@ -216,24 +216,21 @@ const undoable = (app) => {
         states: [computeInit(app)]
       },
       _update: (state, {type, payload}) => {
-        if (type[0] === 'app') {
+        if (type === 'app') {
           const present = state.states[state.time]
-          const next = computeUpdate(app)(present, {
-            type: type[1],
-            payload,
-          })
+          const next = computeUpdate(app)(present, payload)
           return {
             time: state.time + 1,
             states: state.states.slice(0, state.time + 1).concat([next])
           }
         }
-        if (type[0] === 'undo') {
+        if (type === 'undo') {
           return {
             ...state,
             time: state.time - 1,
           }
         }
-        if (type[0] === 'redo') {
+        if (type === 'redo') {
           return {
             ...state,
             time: state.time + 1,
@@ -298,13 +295,10 @@ const listOf = app => {
         }]
       },
       _update: (state, {type, payload}) => {
-        if (type[0].startsWith('app')) {
-          const id = Number(type[0].slice(3))
+        if (type.startsWith('app')) {
+          const id = Number(type.slice(3))
           const item = state.items.find(item => item.id === id)
-          const next = computeUpdate(app)(item.state, {
-            type: type[1],
-            payload,
-          })
+          const next = computeUpdate(app)(item.state, payload)
           return {
             ...state,
             items: state.items.map(item => {
@@ -318,7 +312,7 @@ const listOf = app => {
             })
           }
         }
-        if (type[0] === 'insert') {
+        if (type === 'insert') {
           return {
             ...state,
             id: state.id + 1,
@@ -328,7 +322,7 @@ const listOf = app => {
             }])
           }
         }
-        if (type[0] === 'remove') {
+        if (type === 'remove') {
           return {
             ...state,
             items: state.items.filter(item => {
