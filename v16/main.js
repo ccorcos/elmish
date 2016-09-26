@@ -1,24 +1,15 @@
 
-// some potential issues
-// - the effect thunk doesnt entirely work because a nested child only cares
-//   about its part of the state. so we'll need to figure that out later
+// bonus things to work on
+// - redux middleware / enhancer api
+// - visualize lazy evaluation tree
+// - refactor, function names, comments, documentation, readme, tutorial
 
 // things to do next
-// - create some lazy performance tools to visualize what part of the tree changes
-// - figure out a way to compute the effects tree only once and share it amongst
-//   the drivers so we dont compute getChildren more than we need to
-// - how can we reason about the lazy performance?
-// - pubsub
-//   - seems like we want a driver so that we can lazily compute this but i dont
-//     know how we'd pass it down...
-// - refactor + polish
-//   - better function names
-//   - more comments and documentation
-//   - redux middleware shim
-//   - redux devtool shim
-//   - better debugging tools
-//     - how do I know that laziness worked?
-//     - what was lazy and what wasnt?
+// - computeEffects now depends on state. lets try to compute children lazily
+//   and compute the component tree only once, and share that with all the
+//   effects drivers
+// - pubsub driverso that we can lazily compute this but i dont know how we'd
+//   pass it down...
 
 import R from 'ramda'
 import ReactDriver, { h } from 'elmish/v16/drivers/react'
