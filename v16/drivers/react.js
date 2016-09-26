@@ -24,7 +24,7 @@ export const h = (value, props, children) => {
   if (isPlainObject(value)) {
     return React.createElement(Lazy, {
       view: value.effects._react,
-      dispatch: mapDispatch(value.nested.action[0], props.dispatch),
+      dispatch: mapDispatch(value.nested.action, props.dispatch),
       state: R.view(value.nested.lens, props.state),
       props: props.props,
     }, children)

@@ -72,7 +72,7 @@ export const computeUpdate = component => {
     return getChildren(component, state).reduce(
       (acc, child) => {
         if (child.nested) {
-          if (action.type === child.nested.action[0]) {
+          if (action.type === child.nested.action) {
             return R.over(
               child.nested.lens,
               st => computeUpdate(child)(st, action.payload),
@@ -108,7 +108,7 @@ export const computeEffect = (name, component) => {
           return lazyNode(
             _computeEffect,
             [computeEffect, name, child, {
-              dispatch: mapDispatch(child.nested.action[0], dispatch),
+              dispatch: mapDispatch(child.nested.action, dispatch),
               state: R.view(child.nested.lens, state),
               props,
             }]
@@ -222,41 +222,21 @@ const getEffectNames = component => {
     .map(name => name[0] === '_' ? name.slice(1) : name)
 }
 
-const idLens = R.lens(R.identity, R.identity)
-
-const composeNested = (nested1, nested2) => {
-  return {
-    lens: R.compose(nested1.lens, nested2.lens),
-    action: nested1.concat(nested2.action)
-  }
-}
-
 // setState is really just namespacing so it can be merged.
 // actionType is also just a nest
 export const nestWith = ({getState, setState, actionType}) => component => {
-  const nested = {
-    lens: R.lens(getState, setState),
-    action: [actionType],
-  }
+  assert(
+    !component.nested,
+    'You cannot and should never need to nest a component more than once'
+  )
   return {
     ...component,
-    nested: component.nested ? composeNested(component.nested, nested) : nested,
+    nested: {
+      lens: R.lens(getState, setState),
+      action: actionType,
+    },
   }
 }
-
-
-// effects: getEffectNames(component).map(name => {
-//   return {
-//     [`_${name}`]: ({state, dispatch, props}) => {
-//       return computeEffect(name, component)({
-//         dispatch: mapDispatch(actionType, dispatch),
-//         state: getState(state),
-//         props,
-//       })
-//     }
-//   }
-// }).reduce(merge)
-
 
 export const nest = (key, component) => {
   return nestWith({
