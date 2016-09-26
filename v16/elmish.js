@@ -1,3 +1,4 @@
+import R from 'ramda'
 import flyd from 'flyd'
 import { node, lazyNode } from 'elmish/v16/lazy-tree'
 import { shallowEquals, deepEquals } from 'elmish/v16/utils/compare'
@@ -36,16 +37,31 @@ const getChildren = (component, state) => {
   return getStaticChildren(component)
 }
 
+const getSetter = component => {
+
+}
+
 // use the _init override init state or merge all static children states
 export const computeInit = component => {
   if (component.state && component.state._init) {
     return component.state._init
   }
   return getStaticChildren(component).reduce(
-    (acc, child) => merge(acc, computeInit(child)),
+    (acc, child) => {
+      if (child.nested) {
+        return merge(
+          acc,
+          R.set(child.nested.lens, computeInit(child), {})
+        )
+      }
+      return merge(acc, computeInit(child))
+    },
     component.state && component.state.init || {},
   )
 }
+
+//   _init: setState(computeInit(component), {}),
+
 
 // pass actions and state through all children update methods
 export const computeUpdate = component => {
@@ -54,7 +70,19 @@ export const computeUpdate = component => {
   }
   return (state, action) => {
     return getChildren(component, state).reduce(
-      (acc, child) => computeUpdate(child)(acc, action),
+      (acc, child) => {
+        if (child.nested) {
+          if (action.type === child.nested.action[0]) {
+            return R.over(
+              child.nested.lens,
+              st => computeUpdate(child)(st, action.payload),
+              state
+            )
+          }
+          return acc
+        }
+        return computeUpdate(child)(acc, action)
+      },
       (component.state && component.state.update) ? component.state.update(state, action) : state,
     )
   }
@@ -62,6 +90,9 @@ export const computeUpdate = component => {
 
 // define this helper function so there's a static reference for the lazy tree
 const _computeEffect = (fn, a, b, c) => fn(a,b)(c)
+
+// TODO there should be a way to only compute children once per state. and then
+// compute effects down a single tree
 
 // override function should return a lazy tree, otherwise its a function that
 // returns the value of the node inside a lazy tree.
@@ -73,6 +104,16 @@ export const computeEffect = (name, component) => {
     return node(
       (component.effects && component.effects[name]) ? component.effects[name]({dispatch, state, props}) : {},
       getChildren(component, state).map(child => {
+        if (child.nested) {
+          return lazyNode(
+            _computeEffect,
+            [computeEffect, name, child, {
+              dispatch: mapDispatch(child.nested.action[0], dispatch),
+              state: R.view(child.nested.lens, state),
+              props,
+            }]
+          )
+        }
         return lazyNode(
           _computeEffect,
           [computeEffect, name, child, {dispatch, state, props}]
@@ -114,7 +155,10 @@ const configure = drivers => component => {
 
   // reduce the state over the action stream
   const state$ = flyd.scan(
-    (state, action) => computeUpdate(component)(state, action),
+    (state, action) => {
+      console.log('scan', state, action)
+      return computeUpdate(component)(state, action)
+    },
     computeInit(component),
     action$
   )
@@ -161,7 +205,7 @@ const mapPayload = partial((type, payload, ...args) => {
   }
 })
 
-const mapDispatch = partial((key, dispatch, type, payload) => {
+export const mapDispatch = partial((key, dispatch, type, payload) => {
   if (isFunction(payload)) {
     return dispatch(key, mapPayload(type, payload))
   }
@@ -178,36 +222,41 @@ const getEffectNames = component => {
     .map(name => name[0] === '_' ? name.slice(1) : name)
 }
 
+const idLens = R.lens(R.identity, R.identity)
+
+const composeNested = (nested1, nested2) => {
+  return {
+    lens: R.compose(nested1.lens, nested2.lens),
+    action: nested1.concat(nested2.action)
+  }
+}
+
 // setState is really just namespacing so it can be merged.
 // actionType is also just a nest
 export const nestWith = ({getState, setState, actionType}) => component => {
+  const nested = {
+    lens: R.lens(getState, setState),
+    action: [actionType],
+  }
   return {
-    children: component.children,
-    state: {
-      _init: setState(computeInit(component), {}),
-      _update: (state, {type, payload}) => {
-        if (type == actionType) {
-          return setState(
-            computeUpdate(component)(getState(state), payload),
-            state
-          )
-        }
-        return state
-      },
-    },
-    effects: getEffectNames(component).map(name => {
-      return {
-        [`_${name}`]: ({state, dispatch, props}) => {
-          return computeEffect(name, component)({
-            dispatch: mapDispatch(actionType, dispatch),
-            state: getState(state),
-            props,
-          })
-        }
-      }
-    }).reduce(merge)
+    ...component,
+    nested: component.nested ? composeNested(component.nested, nested) : nested,
   }
 }
+
+
+// effects: getEffectNames(component).map(name => {
+//   return {
+//     [`_${name}`]: ({state, dispatch, props}) => {
+//       return computeEffect(name, component)({
+//         dispatch: mapDispatch(actionType, dispatch),
+//         state: getState(state),
+//         props,
+//       })
+//     }
+//   }
+// }).reduce(merge)
+
 
 export const nest = (key, component) => {
   return nestWith({

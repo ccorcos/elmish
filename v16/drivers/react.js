@@ -3,6 +3,8 @@ import React from 'react'
 import ReactDOM from 'react-dom'
 import { shallowEquals } from 'elmish/v16/utils/compare'
 import { isPlainObject, isString } from 'elmish/v16/utils/is'
+import { mapDispatch } from 'elmish/v16/elmish'
+import R from 'ramda'
 
 // wrap the component view function in a lazy component
 const Lazy = React.createClass({
@@ -20,7 +22,12 @@ const Lazy = React.createClass({
 // a helper function for generating React elements using hyperscript syntax
 export const h = (value, props, children) => {
   if (isPlainObject(value)) {
-    return React.createElement(Lazy, {view: value.effects._react, ...props}, children)
+    return React.createElement(Lazy, {
+      view: value.effects._react,
+      dispatch: mapDispatch(value.nested.action[0], props.dispatch),
+      state: R.view(value.nested.lens, props.state),
+      props: props.props,
+    }, children)
   }
   if (isString(value)) {
     const classNameList = value.match(/(\.\w+)/g)
