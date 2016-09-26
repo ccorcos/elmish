@@ -103,28 +103,35 @@ const partial = fn => (...args) => {
   return _fn
 }
 
+// enforce an arity of two for the partially applied arguments
+const partial2 = fn => (a, b) => {
+  return partial(fn)(a,b)
+}
+
 const configure = drivers => component => {
+  // the global event stream
   const action$ = flyd.stream()
 
+  // reduce the state over the action stream
   const state$ = flyd.scan(
-    (state, action) => {
-      const next = computeUpdate(component)(state, action)
-      return next
-    },
+    (state, action) => computeUpdate(component)(state, action),
     computeInit(component),
     action$
   )
 
-  const dispatch = partial((type, payload, ...args) => {
+  // using partial, we're able to compare dispatch functions with .equals.
+  // the payload can be a functoin which will transform the rest of the inputs
+  // or it can be a static variable in which case it will be the payload.
+  const dispatch = partial2((type, payload, ...args) => {
     if (isFunction(payload)) {
       return action$({type, payload: payload(...args)})
     }
     return action$({type, payload})
   })
 
+  // allow drivers to batch action updates
   const throttle$ = flyd.stream(false)
   const throttledState$ = throttleWhen(throttle$, state$)
-
   const batch = (fn) => {
     throttle$(true)
     fn()
@@ -134,19 +141,20 @@ const configure = drivers => component => {
   // initialize drivers so they can set up their states
   const initializedDrivers = drivers.map(driver => driver(component, dispatch, batch))
 
+  // pipe side-effects to the drivers
   flyd.on(state => {
     initializedDrivers.forEach(driver => driver(state))
   }, throttledState$)
 }
 
-const mapPayload = partial((type, fn, ...args) => {
+const mapPayload = partial((type, payload, ...args) => {
   return {
     type,
-    payload: fn(...args),
+    payload: payload(...args),
   }
 })
 
-export const namespaceDispatch = partial((key, dispatch, type, payload) => {
+const mapDispatch = partial((key, dispatch, type, payload) => {
   if (isFunction(payload)) {
     return dispatch(key, mapPayload(type, payload))
   }
@@ -164,8 +172,8 @@ const getEffectNames = component => {
 }
 
 // setState is really just namespacing so it can be merged.
-// actionType is also just a namespace
-export const namespaceWith = ({getState, setState, actionType}) => component => {
+// actionType is also just a nest
+export const nestWith = ({getState, setState, actionType}) => component => {
   return {
     children: component.children,
     state: {
@@ -183,8 +191,8 @@ export const namespaceWith = ({getState, setState, actionType}) => component => 
     effects: getEffectNames(component).map(name => {
       return {
         [`_${name}`]: ({state, dispatch, props}) => {
-            return computeEffect(name, component)({
-            dispatch: namespaceDispatch(actionType, dispatch),
+          return computeEffect(name, component)({
+            dispatch: mapDispatch(actionType, dispatch),
             state: getState(state),
             props,
           })
@@ -194,8 +202,8 @@ export const namespaceWith = ({getState, setState, actionType}) => component => 
   }
 }
 
-export const namespace = (key, component) => {
-  return namespaceWith({
+export const nest = (key, component) => {
+  return nestWith({
     actionType: key,
     getState: state => state[key],
     setState: (substate, state) => {

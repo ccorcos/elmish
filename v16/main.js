@@ -1,9 +1,12 @@
 
 // some potential issues
-// - the effect thunk doesnt entirely work because a namespaceed child only cares
+// - the effect thunk doesnt entirely work because a nested child only cares
 //   about its part of the state. so we'll need to figure that out later
 
 // things to do next
+// - drivers should specify their effect method names
+// - computeEffect should handle crawling the entire tree rather than namespacing
+//   because nest will need the state to get the children...
 // - refactor + polish
 //   - better names
 //   - more comments and documentation
@@ -23,7 +26,7 @@ import ReactDriver, { h } from 'elmish/v16/drivers/react'
 import HotkeysDriver from 'elmish/v16/drivers/hotkeys'
 import HTTPDriver from 'elmish/v16/drivers/http'
 import { shallow } from 'elmish/v16/utils/compare'
-import configure, { namespace, namespaceWith, computeInit, computeUpdate, computeEffect, namespaceDispatch } from 'elmish/v16/elmish'
+import configure, { nest, nestWith, computeInit, computeUpdate, computeEffect } from 'elmish/v16/elmish'
 
 const start = configure([
   ReactDriver(document.getElementById('root')),
@@ -92,8 +95,8 @@ const Username = {
 // start(Counter)
 // start(Username)
 
-const Counter1 = namespace('counter', Counter)
-const Username1 = namespace('username', Username)
+const Counter1 = nest('counter', Counter)
+const Username1 = nest('username', Username)
 
 const App2 = {
   children: [Counter1, Username1],
@@ -110,8 +113,8 @@ const App2 = {
 // start(App2)
 
 const twoOf = app => {
-  const app1 = namespace('version1', app)
-  const app2 = namespace('version2', app)
+  const app1 = nest('version1', app)
+  const app2 = nest('version2', app)
   return {
     children: [app1, app2],
     effects: {
@@ -199,7 +202,7 @@ const Giphy = {
 // start(Giphy)
 // start(twoOf(Giphy))
 
-const namespaceUndoable = namespaceWith({
+const nestUndoable = nestWith({
   actionType: 'app',
   getState: state => state.states[state.time],
   // we're overriding _init and _update anyways so this doesnt matter
@@ -207,7 +210,7 @@ const namespaceUndoable = namespaceWith({
 })
 
 const undoable = (app) => {
-  const undoableApp = namespaceUndoable(app)
+  const undoableApp = nestUndoable(app)
   return {
     children: [undoableApp],
     state: {
@@ -274,8 +277,8 @@ const undoable = (app) => {
 // start(undoable(App2))
 // start(undoable(twoOf(App2)))
 
-const namespaceListOf = (id, app) =>
-  namespaceWith({
+const nestListOf = (id, app) =>
+  nestWith({
     actionType: `app${id}`,
     getState: state => state.items.find(item => item.id === id).state,
     setState: (substate, state) => substate,
@@ -284,7 +287,7 @@ const namespaceListOf = (id, app) =>
 const listOf = app => {
   return {
     children: state => {
-      return state.items.map(item => namespaceListOf(item.id, app))
+      return state.items.map(item => nestListOf(item.id, app))
     },
     state: {
       _init: {
@@ -341,7 +344,7 @@ const listOf = app => {
           }, 'insert'),
           state.items.map(item => {
             return h('div.item', {key: item.id}, [
-              h(namespaceListOf(item.id, app), {state, dispatch, props}),
+              h(nestListOf(item.id, app), {state, dispatch, props}),
               h('button', {
                 onClick: dispatch('remove', item.id),
               }, 'remove')
@@ -354,3 +357,4 @@ const listOf = app => {
 }
 
 start(listOf(App2))
+// start(listOf(listOf(App2)))
