@@ -3,8 +3,7 @@ import React from 'react'
 import ReactDOM from 'react-dom'
 import { shallowEquals } from 'elmish/v16/utils/compare'
 import { isPlainObject, isString } from 'elmish/v16/utils/is'
-import { mapDispatch } from 'elmish/v16/elmish'
-import R from 'ramda'
+import { computeEffectProps } from 'elmish/v16/elmish'
 
 // wrap the component view function in a lazy component
 const Lazy = React.createClass({
@@ -24,9 +23,7 @@ export const h = (value, props, children) => {
   if (isPlainObject(value)) {
     return React.createElement(Lazy, {
       view: value.effects._react,
-      dispatch: mapDispatch(value.nested.action, props.dispatch),
-      state: R.view(value.nested.lens, props.state),
-      props: props.props,
+      ...computeEffectProps(value, props)
     }, children)
   }
   if (isString(value)) {

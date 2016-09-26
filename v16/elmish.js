@@ -91,6 +91,17 @@ export const computeUpdate = component => {
 // define this helper function so there's a static reference for the lazy tree
 const _computeEffect = (fn, a, b, c) => fn(a,b)(c)
 
+export const computeEffectProps = (child, {dispatch, state, props}) => {
+  if (child.nested) {
+    return {
+      dispatch: mapDispatch(child.nested.action, dispatch),
+      state: R.view(child.nested.lens, state),
+      props,
+    }
+  }
+  return {dispatch, state, props}
+}
+
 // TODO there should be a way to only compute children once per state. and then
 // compute effects down a single tree
 
@@ -104,19 +115,9 @@ export const computeEffect = (name, component) => {
     return node(
       (component.effects && component.effects[name]) ? component.effects[name]({dispatch, state, props}) : {},
       getChildren(component, state).map(child => {
-        if (child.nested) {
-          return lazyNode(
-            _computeEffect,
-            [computeEffect, name, child, {
-              dispatch: mapDispatch(child.nested.action, dispatch),
-              state: R.view(child.nested.lens, state),
-              props,
-            }]
-          )
-        }
         return lazyNode(
           _computeEffect,
-          [computeEffect, name, child, {dispatch, state, props}]
+          [computeEffect, name, child, computeEffectProps(child, {dispatch, state, props})]
         )
       })
     )
