@@ -5,7 +5,7 @@
 
 // things to do next
 // - refactor + polish
-//   - better names
+//   - better function names
 //   - more comments and documentation
 //   - redux middleware shim
 //   - redux devtool shim
@@ -155,71 +155,92 @@ const randomUrl = (topic) =>
 
 const imgSrc = response => response.json.data.image_url
 
-const Giphy = {
-  state: {
-    init: {
-      topic: 'explosions',
-      img: undefined,
-      pending: true,
-      error: false,
-      id: 0,
-    },
-    update: (state, {type, payload}) => {
-      switch(type) {
-        case 'newGif':
-          return {
-            ...state,
-            img: payload,
-            pending: false,
-            error: false,
-          }
-        case 'errorGif':
-          return {
-            ...state,
-            img: undefined,
-            pending: false,
-            error: true,
-          }
-        case 'anotherGif':
-          return {
-            ...state,
-            img: undefined,
-            pending: true,
-            id: state.id + 1,
-          }
-        default:
-          return state
-      }
-    }
-  },
-  effects: {
-    _react: ({dispatch, state}) => {
-      return h('div.giphy', {}, [
-        h('h2.topic', {}, state.topic),
-        state.error ? 'ERROR' : state.pending ? 'LOADING' : h('img', {src: state.img}),
-        h('button', {
-          onClick: dispatch('anotherGif'),
-        }, 'Gimme More!')
-      ])
-    },
-    http: ({dispatch, state}) => {
-      if (state.pending) {
-        return {
-          [state.id]: {
-            url: randomUrl(state.topic),
-            method: 'get',
-            onSuccess: dispatch('newGif', imgSrc),
-            onFailure: dispatch('errorGif'),
-          },
+// take a seed so we dont dedupe http requests
+const Giphy = seed => {
+  return {
+    state: {
+      init: {
+        topic: 'explosions',
+        img: undefined,
+        pending: true,
+        error: false,
+        id: seed,
+      },
+      update: (state, {type, payload}) => {
+        switch(type) {
+          case 'newGif':
+            return {
+              ...state,
+              img: payload,
+              pending: false,
+              error: false,
+            }
+          case 'errorGif':
+            return {
+              ...state,
+              img: undefined,
+              pending: false,
+              error: true,
+            }
+          case 'anotherGif':
+            return {
+              ...state,
+              img: undefined,
+              pending: true,
+              id: state.id + 1,
+            }
+          default:
+            return state
         }
       }
-      return {}
     },
-  },
+    effects: {
+      _react: ({dispatch, state}) => {
+        return h('div.giphy', {}, [
+          h('h2.topic', {}, state.topic),
+          state.error ? 'ERROR' : state.pending ? 'LOADING' : h('img', {src: state.img}),
+          h('button', {
+            onClick: dispatch('anotherGif'),
+          }, 'Gimme More!')
+        ])
+      },
+      http: ({dispatch, state}) => {
+        if (state.pending) {
+          return {
+            [state.id]: {
+              url: randomUrl(state.topic),
+              method: 'get',
+              onSuccess: dispatch('newGif', imgSrc),
+              onFailure: dispatch('errorGif'),
+            },
+          }
+        }
+        return {}
+      },
+    },
+  }
 }
 
-// start(Giphy)
-// start(twoOf(Giphy))
+// start(Giphy(0))
+// start(twoOf(Giphy(0)))
+
+const Giphy1 = nest('giphy1', Giphy(0))
+const Giphy2 = nest('giphy2', Giphy(100))
+const Giphy3 = nest('giphy3', Giphy(200))
+const ThreeGiphy = {
+  children: [Giphy1, Giphy2, Giphy3],
+  effects: {
+    _react: (p) => {
+      return h('div', {}, [
+        h(Giphy1, p),
+        h(Giphy2, p),
+        h(Giphy3, p),
+      ])
+    }
+  }
+}
+
+start(ThreeGiphy)
 
 const nestUndoable = nestWith({
   action: { type: 'app' },

@@ -11,8 +11,6 @@ const assert = (truthy, message) => {
   }
 }
 
-const merge = (a, b) => ({...a, ...b})
-
 // most components will have static children
 const getStaticChildren = component => {
   return component.children || []
@@ -37,10 +35,6 @@ const getChildren = (component, state) => {
   return getStaticChildren(component)
 }
 
-const getSetter = component => {
-
-}
-
 // use the _init override init state or merge all static children states
 export const computeInit = component => {
   if (component.state && component.state._init) {
@@ -49,12 +43,16 @@ export const computeInit = component => {
   return getStaticChildren(component).reduce(
     (acc, child) => {
       if (child.nested) {
-        return merge(
+        return R.merge(
           acc,
-          R.set(child.nested.lens, computeInit(child), {})
+          R.set(
+            child.nested.lens,
+            computeInit(child),
+            {}
+          )
         )
       }
-      return merge(acc, computeInit(child))
+      return R.merge(acc, computeInit(child))
     },
     component.state && component.state.init || {},
   )
