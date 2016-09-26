@@ -167,10 +167,7 @@ const configure = drivers => component => {
 
   // reduce the state over the action stream
   const state$ = flyd.scan(
-    (state, action) => {
-      console.log('scan', state, action)
-      return computeUpdate(component)(state, action)
-    },
+    (state, action) => computeUpdate(component)(state, action),
     computeInit(component),
     action$
   )

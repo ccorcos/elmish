@@ -7,11 +7,11 @@
 // - refactor + polish
 //   - better names
 //   - more comments and documentation
+//   - redux middleware shim
+//   - redux devtool shim
 //   - better debugging tools
 //     - how do I know that laziness worked?
 //     - what was lazy and what wasnt?
-//   - redux middleware shim
-//   - redux devtool shim
 // - lazy performance
 // - pubsub
 
@@ -24,6 +24,7 @@ import HotkeysDriver from 'elmish/v16/drivers/hotkeys'
 import HTTPDriver from 'elmish/v16/drivers/http'
 import { shallow } from 'elmish/v16/utils/compare'
 import configure, { nest, nestWith, computeInit, computeUpdate } from 'elmish/v16/elmish'
+import createLogger from 'redux-logger'
 
 const start = configure([
   ReactDriver(document.getElementById('root')),
@@ -370,4 +371,27 @@ const listOf = app => {
 }
 
 // start(listOf(App2))
-start(listOf(listOf(App2)))
+// start(listOf(listOf(App2)))
+
+const logger = createLogger()
+
+const withLogger = app => {
+  return {
+    children: [app],
+    state: {
+      _update: (state, action) => {
+        const store = {
+          getState: () => state,
+        }
+        const nextState = computeUpdate(app)(state, action)
+        logger(store)(() => nextState)(action)
+        return nextState
+      }
+    },
+    effects: {
+      _react: app.effects._react,
+    }
+  }
+}
+
+start(withLogger(listOf(App2)))
