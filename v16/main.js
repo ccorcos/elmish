@@ -4,6 +4,7 @@
 //   about its part of the state. so we'll need to figure that out later
 
 // things to do next
+// - nest listOf should let you map the entire action
 // - refactor + polish
 //   - better names
 //   - more comments and documentation
@@ -23,7 +24,7 @@ import ReactDriver, { h } from 'elmish/v16/drivers/react'
 import HotkeysDriver from 'elmish/v16/drivers/hotkeys'
 import HTTPDriver from 'elmish/v16/drivers/http'
 import { shallow } from 'elmish/v16/utils/compare'
-import configure, { nest, nestWith, computeInit, computeUpdate, computeEffect } from 'elmish/v16/elmish'
+import configure, { nest, nestWith, computeInit, computeUpdate } from 'elmish/v16/elmish'
 
 const start = configure([
   ReactDriver(document.getElementById('root')),
@@ -221,7 +222,7 @@ const Giphy = {
 // start(twoOf(Giphy))
 
 const nestUndoable = nestWith({
-  actionType: 'app',
+  action: { type: 'app' },
   getState: state => state.states[state.time],
   // we're overriding _init and _update anyways so this doesnt matter
   setState: (substate, state) => substate
@@ -293,7 +294,7 @@ const undoable = (app) => {
 
 const nestListOf = (id, app) =>
   nestWith({
-    actionType: `app${id}`,
+    action: { type: 'item', id },
     getState: state => state.items.find(item => item.id === id).state,
     setState: (substate, state) => substate,
   })(app)
@@ -311,9 +312,8 @@ const listOf = app => {
           state: computeInit(app)
         }]
       },
-      _update: (state, {type, payload}) => {
-        if (type.startsWith('app')) {
-          const id = Number(type.slice(3))
+      _update: (state, {type, payload, id}) => {
+        if (type === 'item') {
           const item = state.items.find(item => item.id === id)
           const next = computeUpdate(app)(item.state, payload)
           return {

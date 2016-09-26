@@ -2,7 +2,7 @@ import R from 'ramda'
 import flyd from 'flyd'
 import { node, lazyNode } from 'elmish/v16/lazy-tree'
 import { shallowEquals, deepEquals } from 'elmish/v16/utils/compare'
-import { isArray, isFunction } from 'elmish/v16/utils/is'
+import { isArray, isFunction, isPlainObject } from 'elmish/v16/utils/is'
 import throttleWhen from 'elmish/src/utils/throttleWhen'
 
 const assert = (truthy, message) => {
@@ -72,7 +72,7 @@ export const computeUpdate = component => {
     return getChildren(component, state).reduce(
       (acc, child) => {
         if (child.nested) {
-          if (action.type === child.nested.action) {
+          if (action.type === child.nested.action.type) {
             return R.over(
               child.nested.lens,
               st => computeUpdate(child)(st, action.payload),
@@ -150,6 +150,17 @@ const partial2 = fn => (a, b) => {
   return partial(fn)(a,b)
 }
 
+const getActionType = type => {
+  if (isPlainObject(type)) {
+    assert(
+      type.type,
+      'Actions defined as object literals must have a `type` property.'
+    )
+    return type
+  }
+  return { type }
+}
+
 const configure = drivers => component => {
   // the global event stream
   const action$ = flyd.stream()
@@ -169,9 +180,9 @@ const configure = drivers => component => {
   // or it can be a static variable in which case it will be the payload.
   const dispatch = partial2((type, payload, ...args) => {
     if (isFunction(payload)) {
-      return action$({type, payload: payload(...args)})
+      return action$({...getActionType(type), payload: payload(...args)})
     }
-    return action$({type, payload})
+    return action$({...getActionType(type), payload})
   })
 
   // allow drivers to batch action updates
@@ -201,7 +212,7 @@ const configure = drivers => component => {
 
 const mapPayload = partial((type, payload, ...args) => {
   return {
-    type,
+    ...getActionType(type),
     payload: payload(...args),
   }
 })
@@ -210,7 +221,7 @@ export const mapDispatch = partial((key, dispatch, type, payload) => {
   if (isFunction(payload)) {
     return dispatch(key, mapPayload(type, payload))
   }
-  return dispatch(key, {type, payload})
+  return dispatch(key, {...getActionType(type), payload})
 })
 
 const getEffectNames = component => {
@@ -225,7 +236,7 @@ const getEffectNames = component => {
 
 // setState is really just namespacing so it can be merged.
 // actionType is also just a nest
-export const nestWith = ({getState, setState, actionType}) => component => {
+export const nestWith = ({getState, setState, action}) => component => {
   assert(
     !component.nested,
     'You cannot and should never need to nest a component more than once'
@@ -233,15 +244,15 @@ export const nestWith = ({getState, setState, actionType}) => component => {
   return {
     ...component,
     nested: {
+      action,
       lens: R.lens(getState, setState),
-      action: actionType,
     },
   }
 }
 
 export const nest = (key, component) => {
   return nestWith({
-    actionType: key,
+    action: { type: key },
     getState: state => state[key],
     setState: (substate, state) => {
       return {
