@@ -20,7 +20,7 @@ const Lazy = React.createClass({
 // a helper function for generating React elements using hyperscript syntax
 export const h = (value, props, children) => {
   if (isPlainObject(value)) {
-    return React.createElement(Lazy, {view: value.effects._view, ...props}, children)
+    return React.createElement(Lazy, {view: value.effects._react, ...props}, children)
   }
   if (isString(value)) {
     const classNameList = value.match(/(\.\w+)/g)
@@ -34,9 +34,10 @@ export const h = (value, props, children) => {
   return React.createElement(value, props, children)
 }
 
-const driver = root => (app, dispatch) => state => {
-  const vdom = app.effects._view({dispatch, state})
-  ReactDOM.render(vdom, root)
-}
-
-export default driver
+export default root => ({
+  effect: 'react',
+  initialize: (app, dispatch) => vdom => {
+    // const vdom = app.effects._react({dispatch, state})
+    ReactDOM.render(vdom, root)
+  }
+})

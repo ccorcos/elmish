@@ -4,7 +4,6 @@
 //   about its part of the state. so we'll need to figure that out later
 
 // things to do next
-// - drivers should specify their effect method names
 // - computeEffect should handle crawling the entire tree rather than namespacing
 //   because nest will need the state to get the children...
 // - refactor + polish
@@ -50,7 +49,7 @@ const Counter = {
     },
   },
   effects: {
-    _view: ({dispatch, state, props}) => {
+    _react: ({dispatch, state, props}) => {
       return h('div.counter', {}, [
         h('button.dec', {onClick: dispatch('dec')}, '-'),
         h('span.count', {}, state.count),
@@ -83,7 +82,7 @@ const Username = {
     },
   },
   effects: {
-    _view: ({dispatch, state, props}) => {
+    _react: ({dispatch, state, props}) => {
       return h('input.username', {
         value: state.username,
         onChange: dispatch('username/change', targetValue)
@@ -101,7 +100,7 @@ const Username1 = nest('username', Username)
 const App2 = {
   children: [Counter1, Username1],
   effects: {
-    _view: ({dispatch, state}) => {
+    _react: ({dispatch, state}) => {
       return h('div.app', {}, [
         h(Counter1, {dispatch, state}),
         h(Username1, {dispatch, state}),
@@ -118,7 +117,7 @@ const twoOf = app => {
   return {
     children: [app1, app2],
     effects: {
-      _view: ({dispatch, state}) => {
+      _react: ({dispatch, state}) => {
         return h('div.two-of', {}, [
           h(app1, {dispatch, state}),
           h(app2, {dispatch, state}),
@@ -174,7 +173,7 @@ const Giphy = {
     }
   },
   effects: {
-    _view: ({dispatch, state}) => {
+    _react: ({dispatch, state}) => {
       return h('div.giphy', {}, [
         h('h2.topic', {}, state.topic),
         state.error ? 'ERROR' : state.pending ? 'LOADING' : h('img', {src: state.img}),
@@ -243,7 +242,7 @@ const undoable = (app) => {
       },
     },
     effects: {
-      _view: ({dispatch, state, props}) => {
+      _react: ({dispatch, state, props}) => {
         const canUndo = state.time > 0
         const canRedo = state.time < state.states.length - 1
         return h('div.undoable', {}, [
@@ -255,7 +254,7 @@ const undoable = (app) => {
             disabled: !canRedo,
             onClick: canRedo ? dispatch('redo') : undefined
           }, 'redo'),
-          computeEffect('view', undoableApp)({
+          computeEffect('react', undoableApp)({
             dispatch,
             state,
             props
@@ -337,7 +336,7 @@ const listOf = app => {
       },
     },
     effects: {
-      _view: ({dispatch, state, props}) => {
+      _react: ({dispatch, state, props}) => {
         return h('div.list-of', {}, [
           h('button', {
             onClick: dispatch('insert'),

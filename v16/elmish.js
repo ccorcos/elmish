@@ -139,11 +139,18 @@ const configure = drivers => component => {
   }
 
   // initialize drivers so they can set up their states
-  const initializedDrivers = drivers.map(driver => driver(component, dispatch, batch))
+  const initializedDrivers = drivers.map(driver => {
+    return {
+      ...driver,
+      listener: driver.initialize(component, dispatch, batch)
+    }
+  })
 
   // pipe side-effects to the drivers
   flyd.on(state => {
-    initializedDrivers.forEach(driver => driver(state))
+    initializedDrivers.forEach(driver => {
+      driver.listener(computeEffect(driver.effect, component)({state, dispatch}))
+    })
   }, throttledState$)
 }
 

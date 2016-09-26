@@ -169,9 +169,9 @@ const driver = (app, dispatch, batch) => {
     b(...args)
   }
 
-  return state => {
-    const computeHotkeys = computeEffect('hotkeys', app)
-    const tree = computeHotkeys({state, dispatch})
+  return tree => {
+    // const computeHotkeys = computeEffect('hotkeys', app)
+    // const tree = computeHotkeys({state, dispatch})
 
     computation = reduceLazyTree(effectEquals, (a,b) => {
       return R.mergeWith(mergeDispatch, a, b)
@@ -181,4 +181,7 @@ const driver = (app, dispatch, batch) => {
   }
 }
 
-export default driver
+export default {
+  effect: 'hotkeys',
+  initialize: driver,
+}

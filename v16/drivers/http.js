@@ -44,9 +44,9 @@ const driver = (app, dispatch, batch) => {
     }
   }
 
-  return state => {
-    const computeHttp = computeEffect('http', app)
-    const tree = computeHttp({state, dispatch})
+  return tree => {
+    // const computeHttp = computeEffect('http', app)
+    // const tree = computeHttp({state, dispatch})
 
     computation = reduceLazyTree(effectEquals, (a,b) => {
       return R.mergeWith(combineHttpEffects, a, b)
@@ -69,4 +69,7 @@ const driver = (app, dispatch, batch) => {
   }
 }
 
-export default driver
+export default {
+  effect: 'http',
+  initialize: driver,
+}
