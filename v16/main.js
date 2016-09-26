@@ -271,4 +271,88 @@ const undoable = (app) => {
 }
 
 // start(undoable(App2))
-start(undoable(twoOf(App2)))
+// start(undoable(twoOf(App2)))
+
+const namespaceListOf = (id, app) =>
+  namespaceWith({
+    actionType: `app${id}`,
+    getState: state => state.items.find(item => item.id === id).state,
+    setState: (substate, state) => substate,
+  })(app)
+
+const listOf = app => {
+  return {
+    children: state => {
+      return state.items.map(item => namespaceListOf(item.id, app))
+    },
+    state: {
+      _init: {
+        id: 1,
+        items: [{
+          id: 0,
+          state: computeInit(app)
+        }]
+      },
+      _update: (state, {type, payload}) => {
+        if (type[0].startsWith('app')) {
+          const id = Number(type[0].slice(3))
+          const item = state.items.find(item => item.id === id)
+          const next = computeUpdate(app)(item.state, {
+            type: type[1],
+            payload,
+          })
+          return {
+            ...state,
+            items: state.items.map(item => {
+              if (item.id === id) {
+                return {
+                  ...item,
+                  state: next,
+                }
+              }
+              return item
+            })
+          }
+        }
+        if (type[0] === 'insert') {
+          return {
+            ...state,
+            id: state.id + 1,
+            items: state.items.concat([{
+              id: state.id,
+              state: computeInit(app)
+            }])
+          }
+        }
+        if (type[0] === 'remove') {
+          return {
+            ...state,
+            items: state.items.filter(item => {
+              return item.id !== payload
+            })
+          }
+        }
+        return state
+      },
+    },
+    effects: {
+      _view: ({dispatch, state, props}) => {
+        return h('div.list-of', {}, [
+          h('button', {
+            onClick: dispatch('insert'),
+          }, 'insert'),
+          state.items.map(item => {
+            return h('div.item', {key: item.id}, [
+              h(namespaceListOf(item.id, app), {state, dispatch, props}),
+              h('button', {
+                onClick: dispatch('remove', item.id),
+              }, 'remove')
+            ])
+          })
+        ])
+      }
+    }
+  }
+}
+
+start(listOf(App2))

@@ -47,15 +47,14 @@ function reduceLazyNode(equals, reducer, prev, lazyNode) {
 }
 
 function reduceNode(equals, reducer, prev, node) {
-  if (node.children) {
+  if (node.children && node.children.length > 0) {
     // recursively evaluate the node's children
     const children = merge((prev && prev.children) || [], node.children)
-      .map(([comp, child]) => reduceLazyTree(equals, reducer, comp, child))
+      .map(([child, comp]) => reduceLazyTree(equals, reducer, comp, child))
     // gather all of the results
     const result = children
       .map(comp => comp.result)
       .concat([node.value])
-      .filter(value => value !== undefined)
       .reduce(reducer)
     // return an object describing the computation
     return {
@@ -74,17 +73,12 @@ function reduceNode(equals, reducer, prev, node) {
   }
 }
 
-// merge will zip together two lists of child nodes. this naive implementation
-// is just zip, but we can potentially use more clever algorithms to look for
-// insertions and deletions, and also merge based on a reserved key prop just
-// like React. note that list1 is a list of computations and list2 is a list
-// of nodes.
-export function merge(list1, list2) {
+// zip but return length of primary list
+export function merge(secondary, primary) {
   const result = []
-  const len = Math.max(list1.length, list2.length)
   let idx = 0
-  while (idx < len) {
-    result[idx] = [list1[idx], list2[idx]]
+  while (idx < primary.length) {
+    result[idx] = [primary[idx], secondary[idx]]
     idx += 1
   }
   return result

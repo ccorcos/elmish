@@ -16,7 +16,7 @@ const getStaticChildren = app => {
 
 const getDynamicChildren = (app, state) => {
   assert(
-    app._init,
+    app.state._init,
     'If a component has dynamic children, then you must specify the ' +
     'inital state of the component using `_init`'
   )
@@ -102,8 +102,10 @@ const configure = drivers => app => {
 
   const state$ = flyd.scan(
     (state, action) => {
-      // console.log("scan", state, action)
-      return computeUpdate(app)(state, action)
+      console.log("scan", state, action)
+      const next = computeUpdate(app)(state, action)
+      console.log("state", next)
+      return next
     },
     computeInit(app),
     action$
