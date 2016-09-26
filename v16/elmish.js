@@ -10,61 +10,69 @@ const assert = (truthy, message) => {
   }
 }
 
-const getStaticChildren = app => {
-  return app.children || []
+const merge = (a, b) => ({...a, ...b})
+
+// most components will have static children
+const getStaticChildren = component => {
+  return component.children || []
 }
 
-const getDynamicChildren = (app, state) => {
+// when a component has dynamic children, then the children are a function of
+// that components state which must be overridden using _init
+const getDynamicChildren = (component, state) => {
   assert(
-    app.state._init,
+    component.state && component.state._init,
     'If a component has dynamic children, then you must specify the ' +
     'inital state of the component using `_init`'
   )
-  return app.children(state)
+  return component.children(state)
 }
 
-const getChildren = (app, state) => {
-  if (isFunction(app.children)) {
-    return getDynamicChildren(app, state)
+// gets static or dynamic children
+const getChildren = (component, state) => {
+  if (isFunction(component.children)) {
+    return getDynamicChildren(component, state)
   }
-  return getStaticChildren(app)
+  return getStaticChildren(component)
 }
 
-// merge all children states with the init state
-export const computeInit = app => {
-  if (app.state && app.state._init) {
-    return app.state._init
+// use the _init override init state or merge all static children states
+export const computeInit = component => {
+  if (component.state && component.state._init) {
+    return component.state._init
   }
-  return getStaticChildren(app).reduce(
-    (st, child) => ({...st, ...computeInit(child)}),
-    app.state && app.state.init || {},
+  return getStaticChildren(component).reduce(
+    (acc, child) => merge(acc, computeInit(child)),
+    component.state && component.state.init || {},
   )
 }
 
-// pass actions to all children and lets the children do all the namespacing
-export const computeUpdate = app => {
-  if (app.state && app.state._update) {
-    return app.state._update
+// pass actions and state through all children update methods
+export const computeUpdate = component => {
+  if (component.state && component.state._update) {
+    return component.state._update
   }
   return (state, action) => {
-    return getChildren(app, state).reduce(
-      (st, child) => computeUpdate(child)(st, action),
-      (app.state && app.state.update) ? app.state.update(state, action) : state,
+    return getChildren(component, state).reduce(
+      (acc, child) => computeUpdate(child)(acc, action),
+      (component.state && component.state.update) ? component.state.update(state, action) : state,
     )
   }
 }
 
+// define this helper function so there's a static reference for the lazy tree
 const _computeEffect = (fn, a, b, c) => fn(a,b)(c)
 
-// compute the node value, and create lazyNodes for all children, creating a lazy tree
-export const computeEffect = (name, app) => {
-  if (app.effects && app.effects[`_${name}`]) {
-    return app.effects[`_${name}`]
+// override function should return a lazy tree, otherwise its a function that
+// returns the value of the node inside a lazy tree.
+export const computeEffect = (name, component) => {
+  if (component.effects && component.effects[`_${name}`]) {
+    return component.effects[`_${name}`]
   }
   return ({dispatch, state, props}) => {
     return node(
-      (app.effects && app.effects[name]) ? app.effects[name]({dispatch, state, props}) : {},
-      getChildren(app, state).map(child => {
+      (component.effects && component.effects[name]) ? component.effects[name]({dispatch, state, props}) : {},
+      getChildren(component, state).map(child => {
         return lazyNode(
           _computeEffect,
           [computeEffect, name, child, {dispatch, state, props}]
@@ -75,12 +83,12 @@ export const computeEffect = (name, app) => {
 }
 
 // partially apply a function that returns a function that can be compared
-// based on the original funciton and the partially applied arguments so that
+// based on the original function and the partially applied arguments so that
 // we can compare dispatch functions and lazily evaluate the lazy tree.
 const partial = fn => (...args) => {
   const _fn = (...more) => fn.apply(null, args.concat(more))
-  _fn.__type = 'thunk'
-  if (fn.__type === 'thunk') {
+  _fn.__type = 'dispatch'
+  if (fn.__type === 'dispatch') {
     _fn.fn = fn.fn
     _fn.args = fn.args.concat(args)
   } else {
@@ -88,26 +96,26 @@ const partial = fn => (...args) => {
     _fn.args = args
   }
   _fn.equals = g => g
-                   && g.__type === 'thunk'
-                   && _fn.fn === g.fn
-                   && g.args
-                   && deepEquals(_fn.args, g.args)
+                 && g.__type === 'dispatch'
+                 && _fn.fn === g.fn
+                 && g.args
+                 && deepEquals(_fn.args, g.args)
   return _fn
 }
 
 const coerseToArray = type => isArray(type) ? type : [type]
 
-const configure = drivers => app => {
+const configure = drivers => component => {
   const action$ = flyd.stream()
 
   const state$ = flyd.scan(
     (state, action) => {
       console.log("scan", state, action)
-      const next = computeUpdate(app)(state, action)
+      const next = computeUpdate(component)(state, action)
       console.log("state", next)
       return next
     },
-    computeInit(app),
+    computeInit(component),
     action$
   )
 
@@ -128,7 +136,7 @@ const configure = drivers => app => {
   }
 
   // initialize drivers so they can set up their states
-  const initializedDrivers = drivers.map(driver => driver(app, dispatch, batch))
+  const initializedDrivers = drivers.map(driver => driver(component, dispatch, batch))
 
   flyd.on(state => {
     initializedDrivers.forEach(driver => driver(state))
@@ -139,10 +147,10 @@ export const namespaceDispatch = partial((key, dispatch, type, payload) => {
   return dispatch([key, coerseToArray(type)], payload)
 })
 
-const getEffectNames = app => {
-  return Object.keys(app.effects || {})
+const getEffectNames = component => {
+  return Object.keys(component.effects || {})
     .concat(
-      (app.children || [])
+      (component.children || [])
         .map(child => Object.keys(child.effects || {}))
         .reduce((acc, ch) => acc.concat(ch), [])
     )
@@ -151,38 +159,36 @@ const getEffectNames = app => {
 
 // setState is really just namespacing so it can be merged.
 // actionType is also just a namespace
-export const namespaceWith = ({getState, setState, actionType}) => app => {
+export const namespaceWith = ({getState, setState, actionType}) => component => {
   return {
-    children: app.children,
+    children: component.children,
     state: {
-      _init: setState(computeInit(app), {}),
+      _init: setState(computeInit(component), {}),
       _update: (state, {type, payload}) => {
         if (type[0] === actionType) {
           return setState(
-            computeUpdate(app)(getState(state), {type: type[1], payload}),
+            computeUpdate(component)(getState(state), {type: type[1], payload}),
             state
           )
         }
         return state
       },
     },
-    effects: getEffectNames(app).map(name => {
+    effects: getEffectNames(component).map(name => {
       return {
         [`_${name}`]: ({state, dispatch, props}) => {
-            return computeEffect(name, app)({
+            return computeEffect(name, component)({
             dispatch: namespaceDispatch(actionType, dispatch),
             state: getState(state),
             props,
           })
         }
       }
-    }).reduce((a, b) => {
-      return {...a, ...b}
-    })
+    }).reduce(merge)
   }
 }
 
-export const namespace = (key, app) => {
+export const namespace = (key, component) => {
   return namespaceWith({
     actionType: key,
     getState: state => state[key],
@@ -192,7 +198,7 @@ export const namespace = (key, app) => {
         [key]: substate,
       }
     },
-  })(app)
+  })(component)
 }
 
 
