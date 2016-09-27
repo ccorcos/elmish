@@ -122,6 +122,31 @@ export const computeEffect = (name, component) => {
   }
 }
 
+const viewChildState = (child, state) => {
+  if (child.nested) {
+    return R.view(child.nested.lens, state)
+  }
+  return state
+}
+
+export const computeComponentLazyTree = (component, state) => {
+  return node(
+    component,
+    getChildren(component, state).map(child => {
+      return lazyNode(
+        computeComponentTree,
+        [child, viewChildState(child, state)]
+      )
+    })
+  }
+}
+
+export const computeComponentTree = (tree, prev) => {
+  // traverse the tree and compute the children. we can lazily do this using state as well
+  // at the same time we can build up subscriptions and publications and do it all lazily
+  // the we just need to map over the tree to generate the effects tree
+}
+
 // partially apply a function that returns a function that can be compared
 // based on the original function and the partially applied arguments so that
 // we can compare dispatch functions and lazily evaluate the lazy tree.
