@@ -25,6 +25,17 @@ const start = configure([
   HTTPDriver,
 ])
 
+const TwoCounter = {
+  children: [Counter1, Counter2],
+  effects: {
+    _hotkeys: (...args) => {
+      return node({}, [
+        computeEffect('_hotkeys', Counter1)(...args),
+      ])
+    }
+  }
+}
+
 const Counter = {
   state: {
     init: {
@@ -45,9 +56,16 @@ const Counter = {
       }
       return state
     },
+    publish: (state, dispatch) => {
+      return {
+        health: state.count,
+        drinkPotion: dispatch('inc'),
+      }
+    }
   },
   effects: {
-    _react: ({dispatch, state, props}) => {
+    subscribe: ['health', 'drinkPotion']
+    _react: ({dispatch, state, pubs, props}) => {
       console.log('counter react')
       return h('div.counter', {}, [
         h('button.dec', {onClick: dispatch('dec')}, '-'),
@@ -98,10 +116,11 @@ const Username = {
 const App = {
   children: [Counter, Username],
   effects: {
-    _react: ({dispatch, state}) => {
+    subscribe: mergeWithChildren([Counter, Username], ['health', 'drinkPotion'])
+    _react: ({dispatch, pubs, state}) => {
       return h('div.app', {}, [
-        h(Counter, {dispatch, state}),
-        h(Username, {dispatch, state}),
+        h(Counter, {dispatch, pubs, state}),
+        h(Username, {dispatch, pubs, state}),
       ])
     },
   },
@@ -122,6 +141,117 @@ const App2 = {
       ])
     },
   },
+}
+
+const App22 = {
+  state: {
+    _init: {
+      ...computeInit(Counter1),
+      ...computeInit(Counter2),
+    }
+    _update: (state, action) => {
+      const state1 = computeUpdate(Counter1)(state, action)
+      const state2 = computeUpdate(Counter2)(state1, action)
+      return state2
+    }
+    _publish: (state, dispatch) => {
+      return  {
+        counter1: computePub(Counter1)(
+          getChildState(Counter1, state)
+          getChildDispatch(Counter1, dispatch)
+        ),
+        counter2: computePub(Counter2)(
+          getChildState(Counter2, state)
+          getChildDispatch(Counter2, dispatch)
+        )
+      }
+    }
+  },
+  effects: {
+    _subscribe: {
+      counter1: computeSubs(Counter1),
+      counter2:, computeSubs(Counter2),
+    },
+    _hotkeys: ({dispatch, state, props}) => {
+      return node(
+        {}, [
+          lazyNode(computeEffect('hotkeys', Counter1), {
+            dispatch: getChildDispatch(Counter1, dispatch),
+            state: getChildState(Counter1, state),
+            pubs: getChildPubs(Counter, pubs)
+            props
+          }),
+          lazyNode(computeEffect('hotkeys', Counter1), {dispatch, state, props}),
+        ]
+      )
+    },
+    _hotkeys: passThoughChildren([Counter1, Coutner2], ({dispatch, state, props}) => {
+      return {}
+    }
+  }
+}
+type Dispatch<K> = (k: K) => () => ()
+type Dispatch<K,V> = (k: K, v:V) => () => ()
+type Dispatch<K,V> = <A>(k: K, v:(a:A => V)) => () => ()
+
+
+type Component<S,A> = {
+  init: S,
+  update: (s:S, a:A) => S,
+  effect: (d:
+}
+
+
+const App222 = {
+  state: {
+    // _init: {
+    //   ...computeInit(Counter1),
+    //   ...computeInit(Counter2),
+    // },
+    _init: combineChildenInits([Counter1, Counter2])
+    // _update: (state, action) => {
+    //   const state1 = computeUpdate(Counter1)(state, action)
+    //   const state2 = computeUpdate(Counter2)(state1, action)
+    //   return state2
+    // }
+    _update: combineChildenUpdates([Counter1, Counter2])
+  },
+  effects: {
+    _hotkeys: combineChildenEffects('hotkeys', [Counter1, Counter2])
+
+    _hotkeys: ({dispatch, state, props}) => {
+      return node(
+        {}, [
+          lazyNode(computeEffect('hotkeys', Counter1), {dispatch, state, props}),
+          lazyNode(computeEffect('hotkeys', Counter1), {dispatch, state, props}),
+        ]
+      )
+    }
+  }
+}
+
+const App22 = context => {
+  state: {
+    _init: {
+      ...computeInit(Counter1(context)),
+      ...computeInit(Counter2(context)),
+    }
+    _update: (state, action) => {
+      const state1 = computeUpdate(Counter1(context)(state, action)
+      const state2 = computeUpdate(Counter2(context)(state1, action)
+      return state2
+    }
+  },
+  effects: {
+    _hotkeys: ({dispatch, state, props}) => {
+      return node(
+        {}, [
+          lazyNode(computeEffect('hotkeys', Counter1(context)), {dispatch, state, props}),
+          lazyNode(computeEffect('hotkeys', Counter1(context)), {dispatch, state, props}),
+        ]
+      )
+    }
+  }
 }
 
 // start(App2)

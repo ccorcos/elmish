@@ -55,14 +55,8 @@ const driver = (app, dispatch, batch) => {
       if (!inFlight[key]) {
         sendRequest(key, requests[key])
       }
-      inFlight[key] = requests[key]
     })
-
-    Object.keys(inFlight).forEach(key => {
-      if (!requests[key]) {
-        delete inFlight[key]
-      }
-    })
+    inFlight = requests
   }
 }
 

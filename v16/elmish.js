@@ -191,6 +191,10 @@ const configure = drivers => component => {
     throttle$(false)
   }
 
+  const pub$ = flyd.map(state => {
+    computePub(app)(state, dispatch)
+  })
+
   // initialize drivers so they can set up their states
   const initializedDrivers = drivers.map(driver => {
     return {
@@ -200,11 +204,11 @@ const configure = drivers => component => {
   })
 
   // pipe side-effects to the drivers
-  flyd.on(state => {
+  flyd.on(([state, pub]) => {
     initializedDrivers.forEach(driver => {
-      driver.listener(computeEffect(driver.effect, component)({state, dispatch}))
+      driver.listener(computeEffect(driver.effect, component)({state, pub, dispatch}))
     })
-  }, throttledState$)
+  }, flyd.lift(throttledState$, pub$))
 }
 
 const mapPayload = partial((type, payload, ...args) => {
@@ -220,6 +224,10 @@ export const mapDispatch = partial((key, dispatch, type, payload) => {
   }
   return dispatch(key, {...getActionType(type), payload})
 })
+
+// { type: 'inc', payload: undefined }
+// {type: 'counter1', payload: { type: 'inc', payload: undefined }}
+
 
 const getEffectNames = component => {
   return Object.keys(component.effects || {})
