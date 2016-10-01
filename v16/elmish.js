@@ -35,31 +35,41 @@ const getChildren = (component, state) => {
   return getStaticChildren(component)
 }
 
+export const computeChildInit = component => {
+  if (component.nested) {
+    return R.set(
+      component.nested.lens,
+      computeInit(component),
+      {}
+    )
+  }
+  return computeInit(component)
+}
+
 // use the _init override init state or merge all static children states
 export const computeInit = component => {
   if (component.state && component.state._init) {
     return component.state._init
   }
   return getStaticChildren(component).reduce(
-    (acc, child) => {
-      if (child.nested) {
-        return R.merge(
-          acc,
-          R.set(
-            child.nested.lens,
-            computeInit(child),
-            {}
-          )
-        )
-      }
-      return R.merge(acc, computeInit(child))
-    },
+    (acc, child) => R.merge(acc, computeChildInit(child)),
     component.state && component.state.init || {},
   )
 }
 
-//   _init: setState(computeInit(component), {}),
-
+export const computeChildUpdate = (component) => (state, action) => {
+  if (component.nested) {
+    if (action.type === component.nested.action.type) {
+      return R.over(
+        component.nested.lens,
+        st => computeUpdate(component)(st, action.payload),
+        state
+      )
+    }
+    return state
+  }
+  return computeUpdate(component)(state, action)
+}
 
 // pass actions and state through all children update methods
 export const computeUpdate = component => {
@@ -68,19 +78,7 @@ export const computeUpdate = component => {
   }
   return (state, action) => {
     return getChildren(component, state).reduce(
-      (acc, child) => {
-        if (child.nested) {
-          if (action.type === child.nested.action.type) {
-            return R.over(
-              child.nested.lens,
-              st => computeUpdate(child)(st, action.payload),
-              state
-            )
-          }
-          return acc
-        }
-        return computeUpdate(child)(acc, action)
-      },
+      (acc, child) => computeChildUpdate(child)(acc, action),
       (component.state && component.state.update) ? component.state.update(state, action) : state,
     )
   }
@@ -120,6 +118,13 @@ export const computeEffect = (name, component) => {
       })
     )
   }
+}
+
+export const lazyEffectNode = (name, component, {dispatch, state, props}) => {
+  return lazyNode(
+    _computeEffect,
+    [computeEffect, name, component, computeEffectProps(component, {dispatch, state, props})]
+  )
 }
 
 // partially apply a function that returns a function that can be compared

@@ -7,6 +7,7 @@
 // things to do next
 // - try to statically type
 //   - how to define lazyNode
+// - make init a function so we can make a seed right there!
 // - take inspiration form combinators vs data and try to simplify the naming
 //   and how to do it if you wanted to only use overrides
 // - compute the entire component tree once for each state. do this lazily based
@@ -30,8 +31,9 @@ import ReactDriver, { h } from 'elmish/v16/drivers/react'
 import HotkeysDriver from 'elmish/v16/drivers/hotkeys'
 import HTTPDriver from 'elmish/v16/drivers/http'
 import { shallow } from 'elmish/v16/utils/compare'
-import configure, { nest, nestWith, computeInit, computeUpdate } from 'elmish/v16/elmish'
+import configure, { nest, nestWith, computeInit, computeUpdate, lazyEffectNode } from 'elmish/v16/elmish'
 import createLogger from 'redux-logger'
+import { node } from 'elmish/v16/lazy-tree'
 
 const start = configure([
   ReactDriver(document.getElementById('root')),
@@ -140,6 +142,39 @@ const App2 = {
 
 // start(App2)
 
+// const App3 = {
+//   children: [Counter1, Username1],
+//   state: {
+//     _init: {
+//       ...R.set(Counter1.nested.lens, computeInit(Counter1), {}),
+//       ...R.set(Username1.nested.lens, computeInit(Username1), {}),
+//     },
+//     _update: (state, action) => {
+//       return R.pipe(
+//         s => computeUpdate(Counter1)(s, action),
+//         s => computeUpdate(Username1)(s, action),
+//       )(state)
+//     },
+//   },
+//   effects: {
+//     _react: ({dispatch, state}) => {
+//       return h('div.app', {}, [
+//         h(Counter1, {dispatch, state}),
+//         h(Username1, {dispatch, state}),
+//       ])
+//     },
+//     _hotkeys: ({dispatch, state, props}) => {
+//       return node({}, [
+//           lazyEffectNode('hotkeys', Counter1, {dispatch, state}),
+//           lazyEffectNode('hotkeys', Username1, {dispatch, state}),
+//         ]
+//       )
+//     },
+//   },
+// }
+
+// start(App3)
+
 const twoOf = app => {
   const app1 = nest('version1', app)
   const app2 = nest('version2', app)
@@ -156,7 +191,7 @@ const twoOf = app => {
   }
 }
 
-// start(twoOf(App2))
+start(twoOf(App2))
 // start(twoOf(twoOf(App2)))
 
 const randomUrl = (topic) =>
@@ -400,7 +435,7 @@ const listOf = app => {
   }
 }
 
-start(listOf(App2))
+// start(listOf(App2))
 // start(listOf(listOf(App2)))
 
 const logger = createLogger()
