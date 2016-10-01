@@ -98,6 +98,19 @@ export const computeEffectProps = (child, {dispatch, state, props}) => {
   return {dispatch, state, props}
 }
 
+// WIP -- how do we make laziness work while remaining convenient?
+// this function needs to return a node, not a function!
+export const computeChildEffect = (name, component, {dispatch, state, props}) => {
+  if (child.nested) {
+    return computeEffect(name, component)({
+      dispatch: mapDispatch(child.nested.action, dispatch),
+      state: R.view(child.nested.lens, state),
+      props,
+    })
+  }
+  return computeEffect(name, component)({dispatch, state, props})
+}
+
 // TODO there should be a way to only compute children once per state. and then
 // compute effects down a single tree
 
