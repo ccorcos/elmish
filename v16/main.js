@@ -6,6 +6,7 @@
 
 // things to do next
 // - try to statically type
+//   - how to define lazyNode
 // - take inspiration form combinators vs data and try to simplify the naming
 //   and how to do it if you wanted to only use overrides
 // - compute the entire component tree once for each state. do this lazily based
