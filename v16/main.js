@@ -5,15 +5,18 @@
 // - refactor, function names, comments, documentation, readme, tutorial
 
 // things to do next
+// - try to statically type
+// - take inspiration form combinators vs data and try to simplify the naming
+//   and how to do it if you wanted to only use overrides
 // - compute the entire component tree once for each state. do this lazily based
 //   on the state of each compoont child. then when we have a nonlazy component tree.
 //   reduce the component tree to get the global publication object
 //   then how do we get a component's subscriptions with all its children subscriptions
 //   lazily? I suppose we can create a publication object that targets each child's
-//   subscriptions and use the state lens to create said object.
-// map over the tree
+//   subscriptions and use the state lens to create said object. map over the tree
 //   to create a lazy tree that computes an the effects which are then lazily
 //   reduced.
+// - pub subs
 
 // - computeEffects now depends on state. lets try to compute children lazily
 //   and compute the component tree only once, and share that with all the
