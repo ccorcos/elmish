@@ -5,6 +5,16 @@
 // - refactor, function names, comments, documentation, readme, tutorial
 
 // things to do next
+// - start with a narrative and a tutorial
+// - init should be a function
+// - simplify computeEffects for overriding
+// - react should handle native trees and map over them to convert into react elements
+// - combine dispatches and dispatch values to other callback functions
+// - refactor nestWith to make more sense
+// - lazily compute dynamic children
+//   - listOf children are different in overridden effects
+// - pub/sub
+
 // - try to statically type
 //   - how to define lazyNode
 // - make init a function so we can make a seed right there!
