@@ -2,13 +2,13 @@
 
 tutorial
 
-- http side-effects
-
-- laziness
+- laziness + performance
   - Lazy react component
   - special dispatch and callback function helpers
 
 - children with combinators
+  - wiring everything up
+  - unknown services when building the component
 
 - other side-effects
   - http requests (get the weather or something)
