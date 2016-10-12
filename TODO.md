@@ -3,8 +3,6 @@
 tutorial
 
 - performance
-  - lazy react
-  - lazy http
   - lazy pubsub
 - plumbing
   - combinators
