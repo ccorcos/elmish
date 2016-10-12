@@ -4,4 +4,4 @@
 // import './tutorial/4-undoable'
 // import './tutorial/5-publish'
 // import './tutorial/6-http'
-import './tutorial/7-lazy'
+import './tutorial/7-lazy-react'
