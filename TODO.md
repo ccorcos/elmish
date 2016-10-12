@@ -1,6 +1,9 @@
 # TODO
 
 tutorial
+
+- http side-effects
+
 - laziness
   - Lazy react component
   - special dispatch and callback function helpers
@@ -14,8 +17,6 @@ tutorial
   - hotkeys
     - reduce the entire tree and batch dispatch
   - graphql?
-
-- publish and subscribe
 
 - children tree because we dont know all side-effects beforehand, describe as data
   - dynamic children
