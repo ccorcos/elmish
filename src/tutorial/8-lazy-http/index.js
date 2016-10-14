@@ -90,6 +90,7 @@ function merge(a,b) {
 function equals(a, b) {
   return eq(a.fn, b.fn)
       && eq(a.args[0].state, b.args[0].state)
+      && eq(a.args[0].dispatch, b.args[0].dispatch)
       && compare(a.args[0].pubs, b.args[0].pubs)
       && compare(a.args[0].props, b.args[0].props)
 }
@@ -162,7 +163,7 @@ const Weather = {
       }
     }
   },
-  view: ({dispatch, state}) => {
+  view: lazy(({dispatch, state}) => {
     const error = state.error ? <div>{JSON.stringify(state.error)}</div> : false
     const result = state.result ? <div>{state.result.name}: {state.result.weather[0].description}</div> : false
     const fetching = state.fetching ? <div>loading...</div> : false
@@ -178,7 +179,7 @@ const Weather = {
         {result}
       </div>
     )
-  },
+  }),
   http: ({dispatch, state}) => {
     console.log('compute http')
     if (state.fetching) {
