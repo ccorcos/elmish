@@ -18,6 +18,14 @@ export const forward = partial((dispatch, key, type, payload) => {
   }
 })
 
+export const callback = partial((fn, payload, ...args) => {
+  if (typeof payload === 'function') {
+    return fn(payload(...args))
+  } else {
+    return fn(payload)
+  }
+})
+
 const configure = drivers => app => {
   const dispatch = partial2((type, payload, ...args) => {
     if (typeof payload === 'function') {

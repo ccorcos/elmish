@@ -8,6 +8,9 @@ tutorial
   - combinators
   - component tree
     - dynamic children
+    - lazy component tree
+- abstractions
+  - dont want to think about PAFE or lazy trees
 - real code
   - listOf
   - undoable
