@@ -18,50 +18,11 @@ function lazyNode(fn, ...args) {
   }
 }
 
-const tree = node({count: 1}, [
-  node({count: 1}),
-  lazyNode(n => node({count: n}, [
-    node({count: n*2}),
-  ]), 1)
-])
-
-computation = tree.reduce((a,b) => a + b.count, 0, computation) // 5
-
-zippedComp = zip(computation, tree).reduce(...)
-
-
-// node, lazyNode, compNode, computation
-
-// monadic bind!
-lazyCompNode((equals, computation) => {
-  if (equals(node, computate.lazyNode)) {
-    return computation
-  }
-  const c = node.fn(...node.args).reduce(merge, computation)
-  return R.evolve({
-    result: r => ({one: r})
-  }, c)
-})
-
-
-
-
-
-
-
-
-
-
-
-
 function reduceLazyTree(equals, reducer, prev, next) {
   // check if there is a previous computation so we can be lazy
   if (next.__type === 'lazyNode') {
     // if the our tree is lazy
     return reduceLazyNode(equals, reducer, prev, next)
-  }
-  if (next.__type === 'compNode') {
-    return next(equals, prev)
   }
   // if next is a node
   return reduceNode(equals, reducer, prev, next)
