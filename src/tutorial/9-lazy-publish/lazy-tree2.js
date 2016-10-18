@@ -307,7 +307,7 @@ zippedComp = zip(computation, tree).reduce(...)
 // node, lazyNode, compNode, computation
 
 // monadic bind!
-lazyCompNode((equals, computation) => {
+lazyCompNode(node => (equals, computation) => {
   if (equals(node, computation.lazyNode)) {
     return computation
   }
@@ -315,7 +315,7 @@ lazyCompNode((equals, computation) => {
   return R.evolve({
     result: r => ({one: r})
   }, c)
-})
+}, node)
 
 
 

@@ -232,7 +232,7 @@ const twoOf = kind => ({
       lazyNode(kind.http, {
         dispatch: forward(dispatch, 'one'),
         state: state.one,
-      }),
+      }).reduce(merge, {}).map(filterValues(propEq('method', 'get'))),
       lazyNode(kind.http, {
         dispatch: forward(dispatch, 'two'),
         state: state.two,
