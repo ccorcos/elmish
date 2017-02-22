@@ -5,5 +5,7 @@
 // import './tutorial/5-publish'
 // import './tutorial/6-http'
 // import './tutorial/7-lazy-react'
-import './tutorial/8-lazy-http'
+// import './tutorial/8-lazy-http'
 // import './tutorial/9-lazy-publish' // WIP
+
+import './tutorial/idea2'

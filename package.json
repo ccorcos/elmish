@@ -8,7 +8,8 @@
   "dependencies": {
     "flyd": "^0.2.2",
     "react": "^15.3.2",
-    "react-dom": "^15.3.2"
+    "react-dom": "^15.3.2",
+    "shallowequal": "^0.2.2"
   },
   "scripts": {
     "start": "react-scripts start",
